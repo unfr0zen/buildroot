@@ -1,0 +1,6 @@
+#!/bin/sh
+export SDL_VIDEODRIVER=kmsdrm
+export SDL_KMSDRM_DEVICE_INDEX=0
+export SDL_AUDIODRIVER=dummy
+exec /usr/lib/ioquake3/ioquake3 \
+ +set fs_basepath /usr/lib/ioquake3 +set fs_basegame demoq3 "$@"

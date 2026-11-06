@@ -77,6 +77,49 @@ int main(void) {
     glReadPixels(8, 8, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
     printf("Triangle: %u %u %u %u; error 0x%x\n", pixel[0], pixel[1], pixel[2], pixel[3],
            glGetError());
-    return !(pixel[0] >= 190 && pixel[0] <= 192 && pixel[1] >= 63 && pixel[1] <= 65 &&
-             pixel[2] >= 127 && pixel[2] <= 129);
+    if (!(pixel[0] >= 190 && pixel[0] <= 192 && pixel[1] >= 63 && pixel[1] <= 65 &&
+          pixel[2] >= 127 && pixel[2] <= 129)) return 6;
+    vs = "attribute vec2 position; attribute vec2 uv; varying vec2 texcoord;"
+         "void main(){gl_Position=vec4(position,0.0,1.0);texcoord=uv;}";
+    fs = "precision mediump float; varying vec2 texcoord; uniform sampler2D image;"
+         "void main(){gl_FragColor=texture2D(image,texcoord);}";
+    glShaderSource(vertex, 1, &vs, NULL);
+    glCompileShader(vertex);
+    glShaderSource(fragment, 1, &fs, NULL);
+    glCompileShader(fragment);
+    glBindAttribLocation(program, 1, "uv");
+    glLinkProgram(program);
+    glGetProgramiv(program, GL_LINK_STATUS, &linked);
+    if (!linked) return 7;
+    glUseProgram(program);
+    float quad[] = {-1, -1, 1, -1, -1, 1, 1, 1};
+    float uv[] = {0, 0, 1, 0, 0, 1, 1, 1};
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, quad);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, uv);
+    glEnableVertexAttribArray(1);
+    unsigned char colors[] = {255, 0, 0, 255, 0, 255, 0, 255,
+                              0, 0, 255, 255, 255, 255, 0, 255};
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, colors);
+    glUniform1i(glGetUniformLocation(program, "image"), 0);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glFinish();
+    unsigned failures = 0;
+    for (unsigned i = 0; i < 4; i++) {
+        glReadPixels(i % 2 ? 12 : 4, i / 2 ? 12 : 4, 1, 1,
+                     GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+        printf("Texture %u: %u %u %u %u; error 0x%x\n", i,
+               pixel[0], pixel[1], pixel[2], pixel[3], glGetError());
+        for (unsigned j = 0; j < 4; j++) {
+            if (pixel[j] != colors[i * 4 + j]) failures++;
+        }
+    }
+    return failures ? 8 : 0;
 }

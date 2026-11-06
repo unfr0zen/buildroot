@@ -1,0 +1,15 @@
+config BR2_PACKAGE_IOQUAKE3
+ bool "ioquake3"
+ depends on BR2_PACKAGE_HAS_LIBEGL
+ depends on BR2_PACKAGE_HAS_LIBGLES
+ depends on BR2_PACKAGE_HAS_LIBGBM
+ depends on BR2_TOOLCHAIN_HAS_THREADS
+ depends on !BR2_STATIC_LIBS
+ select BR2_PACKAGE_JPEG
+ select BR2_PACKAGE_ZLIB
+ select BR2_PACKAGE_SDL2
+ select BR2_PACKAGE_SDL2_OPENGLES
+ select BR2_PACKAGE_SDL2_KMSDRM
+ help
+   Quake III Arena engine with the OpenGL ES 2 renderer and KMS display.
+   Game data must be supplied separately.

@@ -1,0 +1,6 @@
+config BR2_PACKAGE_QUAKE3_DEMO
+ bool "Quake III Arena demo data"
+ depends on BR2_PACKAGE_IOQUAKE3
+ help
+   Install the public Quake III Arena demo maps and assets.
+   The data uses id Software's demo license.

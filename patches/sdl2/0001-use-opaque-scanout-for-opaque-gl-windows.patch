@@ -1,0 +1,25 @@
+From: Will
+Subject: [PATCH] kmsdrm: use opaque scanout buffers for opaque gl windows
+
+--- a/src/video/kmsdrm/SDL_kmsdrmvideo.c
++++ b/src/video/kmsdrm/SDL_kmsdrmvideo.c
+@@ -1193,7 +1193,8 @@
+     SDL_VideoDisplay *display = SDL_GetDisplayForWindow(window);
+     SDL_DisplayData *dispdata = (SDL_DisplayData *)display->driverdata;
+ 
+-    uint32_t surface_fmt = GBM_FORMAT_ARGB8888;
++    uint32_t surface_fmt = _this->gl_config.alpha_size > 0 ?
++                           GBM_FORMAT_ARGB8888 : GBM_FORMAT_XRGB8888;
+     uint32_t surface_flags = GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING;
+ 
+     EGLContext egl_context;
+@@ -1219,7 +1220,8 @@
+     display->current_mode.w = dispdata->mode.hdisplay;
+     display->current_mode.h = dispdata->mode.vdisplay;
+     display->current_mode.refresh_rate = dispdata->mode.vrefresh;
+-    display->current_mode.format = SDL_PIXELFORMAT_ARGB8888;
++    display->current_mode.format = surface_fmt == GBM_FORMAT_ARGB8888 ?
++                                   SDL_PIXELFORMAT_ARGB8888 : SDL_PIXELFORMAT_RGB888;
+ 
+     windata->gs = KMSDRM_gbm_surface_create(viddata->gbm_dev,
+                                             dispdata->mode.hdisplay, dispdata->mode.vdisplay,

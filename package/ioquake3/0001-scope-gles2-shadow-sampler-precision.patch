@@ -1,0 +1,15 @@
+From: Will
+Subject: [PATCH] renderer: scope gles2 shadow sampler precision to fragment shaders
+
+--- a/code/renderergl2/tr_glsl.c
++++ b/code/renderergl2/tr_glsl.c
+@@ -300,7 +300,8 @@
+ 
+ 			Q_strcat(dest, size, "precision mediump float;\n");
+ 
+-			if (glRefConfig.shadowSamplers)
++			if (shaderType == GL_FRAGMENT_SHADER && glRefConfig.shadowSamplers && extra &&
++			    strstr(extra, "GL_EXT_shadow_samplers"))
+ 			{
+ 				Q_strcat(dest, size, "precision mediump sampler2DShadow;\n");
+ 				Q_strcat(dest, size, "#define shadow2D(a,b) shadow2DEXT(a,b)\n");

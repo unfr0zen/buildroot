@@ -1,0 +1,29 @@
+From: Will
+Subject: [PATCH] renderer: skip shaders for disabled shadow and ssao effects
+
+--- a/code/renderergl2/tr_glsl.c
++++ b/code/renderergl2/tr_glsl.c
+@@ -1413,8 +1413,9 @@
+ 
+ 
+ 	// GLSL 1.10+ or GL_EXT_shadow_samplers extension are required for sampler2DShadow type
+-	if (glRefConfig.glslMajorVersion > 1 || (glRefConfig.glslMajorVersion == 1 && glRefConfig.glslMinorVersion >= 10)
+-	    || glRefConfig.shadowSamplers)
++	if (r_sunlightMode->integer && (glRefConfig.glslMajorVersion > 1 ||
++	    (glRefConfig.glslMajorVersion == 1 && glRefConfig.glslMinorVersion >= 10)
++	    || glRefConfig.shadowSamplers))
+ 	{
+ 		attribs = ATTR_POSITION | ATTR_TEXCOORD;
+ 		extradefines[0] = '\0';
+@@ -1468,8 +1469,9 @@
+ 	numEtcShaders++;
+ 
+ 	// GLSL 1.10+ or GL_OES_standard_derivatives extension are required for dFdx() and dFdy() GLSL functions
+-	if (glRefConfig.glslMajorVersion > 1 || (glRefConfig.glslMajorVersion == 1 && glRefConfig.glslMinorVersion >= 10)
+-	    || glRefConfig.standardDerivatives)
++	if (r_ssao->integer && (glRefConfig.glslMajorVersion > 1 ||
++	    (glRefConfig.glslMajorVersion == 1 && glRefConfig.glslMinorVersion >= 10)
++	    || glRefConfig.standardDerivatives))
+ 	{
+ 		attribs = ATTR_POSITION | ATTR_TEXCOORD;
+ 		extradefines[0] = '\0';

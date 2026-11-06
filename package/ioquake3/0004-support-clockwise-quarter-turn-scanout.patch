@@ -1,0 +1,102 @@
+From: Will
+Subject: [PATCH] renderer: support clockwise quarter-turn scanout
+
+--- a/code/renderergl2/tr_init.c
++++ b/code/renderergl2/tr_init.c
+@@ -181,6 +181,7 @@
+ cvar_t	*r_shadows;
+ cvar_t	*r_flares;
+ cvar_t	*r_mode;
++cvar_t	*r_rotate90;
+ cvar_t	*r_nobind;
+ cvar_t	*r_singleShader;
+ cvar_t	*r_roundImagesDown;
+@@ -246,6 +247,25 @@
+ ** setting variables, checking GL constants, and reporting the gfx system config
+ ** to the user.
+ */
++static void (APIENTRY *nativeViewport)(GLint, GLint, GLsizei, GLsizei);
++static void (APIENTRY *nativeScissor)(GLint, GLint, GLsizei, GLsizei);
++
++static void APIENTRY RotatedViewport(GLint x, GLint y, GLsizei width, GLsizei height)
++{
++	if (!glState.currentFBO)
++		nativeViewport(y, glConfig.vidWidth - x - width, height, width);
++	else
++		nativeViewport(x, y, width, height);
++}
++
++static void APIENTRY RotatedScissor(GLint x, GLint y, GLsizei width, GLsizei height)
++{
++	if (!glState.currentFBO)
++		nativeScissor(y, glConfig.vidWidth - x - width, height, width);
++	else
++		nativeScissor(x, y, width, height);
++}
++
+ static void InitOpenGL( void )
+ {
+ 	//
+@@ -266,6 +286,17 @@
+ 		GLimp_Init( qfalse );
+ 		GLimp_InitExtraExtensions();
+ 
++		if (r_rotate90->integer) {
++			temp = glConfig.vidWidth;
++			glConfig.vidWidth = glConfig.vidHeight;
++			glConfig.vidHeight = temp;
++			glConfig.windowAspect = (float)glConfig.vidWidth / glConfig.vidHeight;
++			nativeViewport = qglViewport;
++			nativeScissor = qglScissor;
++			qglViewport = RotatedViewport;
++			qglScissor = RotatedScissor;
++		}
++
+ 		glConfig.textureEnvAddAvailable = qtrue;
+ 
+ 		// OpenGL driver constants
+@@ -1265,6 +1296,7 @@
+ 	ri.Cvar_CheckRange( r_ext_multisample, 0, 4, qtrue );
+ 	r_overBrightBits = ri.Cvar_Get ("r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
+ 	r_ignorehwgamma = ri.Cvar_Get( "r_ignorehwgamma", "0", CVAR_ARCHIVE | CVAR_LATCH);
++	r_rotate90 = ri.Cvar_Get("r_rotate90", "0", CVAR_ARCHIVE | CVAR_LATCH);
+ 	r_mode = ri.Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
+ 	r_fullscreen = ri.Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE );
+ 	r_noborder = ri.Cvar_Get("r_noborder", "0", CVAR_ARCHIVE | CVAR_LATCH);
+--- a/code/renderergl2/tr_local.h
++++ b/code/renderergl2/tr_local.h
+@@ -1778,6 +1778,7 @@
+ 
+ extern  cvar_t  *r_externalGLSL;
+ 
++extern  cvar_t  *r_rotate90;
+ extern  cvar_t  *r_hdr;
+ extern  cvar_t  *r_floatLightmap;
+ extern  cvar_t  *r_postProcess;
+--- a/code/renderergl2/tr_glsl.c
++++ b/code/renderergl2/tr_glsl.c
+@@ -877,6 +877,7 @@
+ 
+ void GLSL_SetUniformMat4(shaderProgram_t *program, int uniformNum, const mat4_t matrix)
+ {
++	mat4_t rotated;
+ 	GLint *uniforms = program->uniforms;
+ 	vec_t *compare = (float *)(program->uniformBuffer + program->uniformBufferOffsets[uniformNum]);
+ 
+@@ -889,6 +890,16 @@
+ 		return;
+ 	}
+ 
++	if (r_rotate90->integer && !glState.currentFBO &&
++	    uniformNum == UNIFORM_MODELVIEWPROJECTIONMATRIX) {
++		Mat4Copy(matrix, rotated);
++		for (int column = 0; column < 4; column++) {
++			rotated[column * 4] = matrix[column * 4 + 1];
++			rotated[column * 4 + 1] = -matrix[column * 4];
++		}
++		matrix = rotated;
++	}
++
+ 	if (Mat4Compare(matrix, compare))
+ 	{
+ 		return;

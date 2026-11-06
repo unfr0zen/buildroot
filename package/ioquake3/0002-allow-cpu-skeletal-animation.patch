@@ -1,0 +1,15 @@
+From: Will
+Subject: [PATCH] renderer: allow cpu skeletal animation on limited gpus
+
+--- a/code/renderergl2/tr_init.c
++++ b/code/renderergl2/tr_init.c
+@@ -292,7 +292,8 @@
+ 			qglGetIntegerv( GL_MAX_VERTEX_UNIFORM_COMPONENTS, &temp );
+ 		}
+ 		glRefConfig.glslMaxAnimatedBones = Com_Clamp( 0, IQM_MAX_JOINTS, ( temp - 160 ) / 16 );
+-		if ( glRefConfig.glslMaxAnimatedBones < 12 ) {
++		if ( glRefConfig.glslMaxAnimatedBones < 12 ||
++		     !ri.Cvar_Get("r_gpuSkeletalAnimation", "1", CVAR_ARCHIVE | CVAR_LATCH)->integer ) {
+ 			glRefConfig.glslMaxAnimatedBones = 0;
+ 		}
+ 	}

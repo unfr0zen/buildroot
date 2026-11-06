@@ -1,0 +1,20 @@
+From: Will
+Subject: [PATCH] ui: detect the demoq3 base game
+
+--- a/code/q3_ui/ui_gameinfo.c
++++ b/code/q3_ui/ui_gameinfo.c
+@@ -806,10 +806,12 @@
+ ===============
+ */
+ void UI_InitGameinfo( void ) {
++	char basegame[MAX_CVAR_VALUE_STRING];
+ 
+ 	UI_InitMemory();
+ 	UI_LoadArenas();
+ 	UI_LoadBots();
+ 
+-	uis.demoversion = qfalse;
+-}
++	trap_Cvar_VariableStringBuffer("fs_basegame", basegame, sizeof(basegame));
++	uis.demoversion = !Q_stricmp(basegame, "demoq3");
++}

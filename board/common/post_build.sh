@@ -13,3 +13,8 @@ mkdir -p "$1/etc/systemd/system/getty.target.wants"
 ln -sf ../nest-usb-shell.service "$1/etc/systemd/system/getty.target.wants/nest-usb-shell.service"
 ln -sf /usr/lib/systemd/system/getty@.service "$1/etc/systemd/system/getty.target.wants/getty@tty1.service"
 rm -f "$1/etc/avahi/services/sftp-ssh.service"
+
+mkdir -p "$1/etc/systemd/system/sysinit.target.wants"
+ln -sf ../nest-console-font.service "$1/etc/systemd/system/sysinit.target.wants/nest-console-font.service"
+
+ln -sf ../nest-console.service "$1/etc/systemd/system/getty.target.wants/nest-console.service"

@@ -1,9 +1,9 @@
 [Unit]
 Description=Backplate sensor MCU
-After=dev-ttysensormcu0.device
-Requires=dev-ttysensormcu0.device
+After=nest-hardware.service
 [Service]
-ExecStart=/usr/sbin/nest-backplate
+EnvironmentFile=/etc/default/nest-backplate
+ExecStart=/usr/sbin/nest-backplate ${BACKPLATE_UART}
 Restart=on-failure
 RestartSec=3
 

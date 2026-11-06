@@ -1,5 +1,5 @@
 add_newline = false
-format = "$username$hostname$directory$status$character"
+format = "$username$hostname$directory$character"
 
 [username]
 show_always = true
@@ -16,9 +16,7 @@ read_only = " ro"
 truncation_length = 3
 
 [status]
-disabled = false
-symbol = "!"
-format = "[$symbol$status](bold red) "
+disabled = true
 
 [character]
 success_symbol = "[>](bold green)"

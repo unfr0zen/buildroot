@@ -34,12 +34,13 @@ def command(text):
     raise AssertionError(f"No root prompt: {output!r}")
 
 
-for failed, status in [("false", "!1"), ("__nest_missing_command__", "!127")]:
+for failed in ("false", "__nest_missing_command__"):
     output = command(failed)
-    assert status in output, output
+    assert not re.search(r"!\d+", output), output
+    assert "\x1b[1;31m>" in read()["text"][-100:], "Missing error character"
     output = command("")
     assert not re.search(r"!\d+", output), output
     assert "\x1b[1;32m" in read()["text"][-100:], "Prompt did not return to green"
-assert "!1" in command("false")
-assert "!1" not in command("true")
-print("PASS: errors display once; Enter and successful commands restore green")
+assert not re.search(r"!\d+", command("false"))
+assert not re.search(r"!\d+", command("true"))
+print("PASS: error codes stay hidden; Enter and successful commands restore green")

@@ -104,3 +104,12 @@ To configure Wi-Fi, write `/etc/wpa_supplicant.conf` and enable the upstream
 `wpa_supplicant@wlan0.service` unit (`systemctl enable --now
 wpa_supplicant@wlan0`). Systemd-networkd requests
 DHCP after association. No Wi-Fi credentials are included in the image.
+
+The display service loads panel and backlight drivers before `sysinit.target`.
+The font service prints the banner as soon as the framebuffer is available.
+Coldplug runs alongside other services; USB waits for its UDC rather than the
+whole udev queue. Diamond3 uses four udev workers; J49 uses one.
+`nest-console.service` opens the UART directly, configured by
+`/etc/default/nest-console`. Login consoles lower console printk verbosity;
+boot messages remain enabled, and subsequent messages remain in `dmesg` and
+the journal. `dmesg -n 7` restores live kernel console messages.

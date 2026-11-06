@@ -54,7 +54,7 @@ with a.output.open("r+b") as target:
     env.pop("silent", None)
     # The release U-Boot blanks the first console argument.
     env["bootargs"] = (
-        "console= console=tty0 console=ttyS0,115200 earlycon=uart8250,mmio32,0x4806a000 ubi.mtd=2,2048 root=ubi0:rootfs rootfstype=ubifs rw clk_ignore_unused fbcon=rotate:0"
+        "console= console=tty0 console=ttyS0,115200 earlycon=uart8250,mmio32,0x4806a000 loglevel=7 systemd.show_status=error ubi.mtd=2,2048 root=ubi0:rootfs rootfstype=ubifs rw clk_ignore_unused fbcon=rotate:0"
     )
     env["bootcmd"] = "nboot.i 0x81000000 0 0x400000; bootm 0x81000000"
     for generation, offset in [(1, 0x340000), (0, 0x3A0000)]:

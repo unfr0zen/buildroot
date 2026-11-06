@@ -1,6 +1,8 @@
 [Unit]
 Description=LCD panel and backlight
-After=systemd-udev-trigger.service
+DefaultDependencies=no
+After=systemd-remount-fs.service systemd-udevd-kernel.socket
+Before=sysinit.target
 Before=getty@tty1.service
 
 [Service]

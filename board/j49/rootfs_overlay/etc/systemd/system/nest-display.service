@@ -1,0 +1,13 @@
+[Unit]
+Description=LCD panel and backlight
+DefaultDependencies=no
+After=systemd-remount-fs.service systemd-udevd-kernel.socket
+Before=sysinit.target getty@tty1.service
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/modprobe -a j49-panel j49-backlight
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

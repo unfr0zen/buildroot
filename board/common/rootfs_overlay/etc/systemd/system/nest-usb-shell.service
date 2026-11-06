@@ -3,6 +3,7 @@ Description=USB serial root shell
 After=nest-usb.service
 Requires=nest-usb.service
 [Service]
+ExecStartPre=/bin/dmesg -n 1
 ExecStart=/sbin/agetty --autologin root --noclear --local-line ttyGS0 115200 xterm-256color
 Restart=always
 

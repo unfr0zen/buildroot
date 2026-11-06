@@ -50,6 +50,6 @@ preserves the reference backup's complete 4 MiB boot partition, including DBBT.
 The reference must contain both copies of the supplied signed U-Boot.
 Restore preserves or regenerates ROM boot-control data and preserves the chip's
 bad-block table. This is not an OOB/ECC image for a raw programmer.
-Physical boot and HAB authentication remain unverified.
-The restore tool's final stock-USB wait can time out: this image uses
-USB `1d6b:0104`. Check the UART or USB serial console for Linux startup.
+Physical peripherals and HAB authentication require device validation.
+Use an unfr0zen build that recognizes Homebrew USB `1d6b:0104` at restore
+completion. UART and USB serial expose the Linux console.

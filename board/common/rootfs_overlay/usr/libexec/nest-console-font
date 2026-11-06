@@ -2,5 +2,6 @@
 [ "$1" = start ] || exit 0
 while [ ! -e /dev/fb0 ]; do sleep 0.05; done
 setfont -C /dev/tty1 /usr/share/consolefonts/thermostat.psf
-printf '\033%%G' > /dev/tty1
+printf '\033%%G\033[9;0]' > /dev/tty1
 cat /etc/issue > /dev/tty1
+echo 0 > /sys/class/graphics/fb0/blank

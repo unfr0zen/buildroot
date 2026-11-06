@@ -40,11 +40,14 @@ and `make BOARD=j49`. Docker builds reuse the Diamond3 glibc toolchain for J49.
 To package a physical Diamond3 test image after building:
 
 ```sh
-make diamond3-image UBOOT='/path/to/u-boot-6.5-14-signed.hab'
+make diamond3-image UBOOT='/path/to/u-boot-6.5-14-signed.hab' \
+  BOOT_NAND='/path/to/diamond3-nand-backup.bin'
 ```
 
 `output/images/diamond3-buildroot.bin` is a 512 MiB logical NAND image for
-`unfr0zen restore`, with a `.sha256` sidecar. It uses the hardware DTB.
+`unfr0zen restore`, with a `.sha256` sidecar. It uses the hardware DTB and
+preserves the reference backup's complete 4 MiB boot partition, including DBBT.
+The reference must contain both copies of the supplied signed U-Boot.
 Restore preserves or regenerates ROM boot-control data and preserves the chip's
 bad-block table. This is not an OOB/ECC image for a raw programmer.
 Physical boot and HAB authentication remain unverified.

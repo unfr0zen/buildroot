@@ -27,7 +27,8 @@ qemu:
 .PHONY: diamond3-image
 diamond3-image:
 	@test -n "$(UBOOT)" || { echo 'Set UBOOT=/absolute/path/to/signed.hab'; exit 1; }
-	python3 scripts/diamond3-nand.py --uboot "$(UBOOT)"
+	@test -n "$(BOOT_NAND)" || { echo 'Set BOOT_NAND=/absolute/path/to/logical-nand-backup.bin'; exit 1; }
+	python3 scripts/diamond3-nand.py --uboot "$(UBOOT)" --boot-reference "$(BOOT_NAND)"
 
 .PHONY: firmware
 firmware:

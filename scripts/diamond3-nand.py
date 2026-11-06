@@ -13,6 +13,8 @@ BLOCK_SIZE = 0x20000
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--uboot", type=Path, required=True)
+    parser.add_argument("--boot-reference", type=Path, required=True,
+                        help="logical NAND backup providing the complete boot partition")
     parser.add_argument("--images", type=Path, default=ROOT / "output/images")
     parser.add_argument("--output", type=Path,
                         default=ROOT / "output/images/diamond3-buildroot.bin")
@@ -27,6 +29,18 @@ def main():
     boot_size = struct.unpack_from("<I", boot, data_offset + 4)[0]
     if boot_size != len(boot) or len(boot) > 0x180000:
         parser.error("U-Boot length must match its signed boot-data size")
+    if args.boot_reference.stat().st_size != NAND_SIZE:
+        parser.error("boot reference must be a 512 MiB logical NAND backup")
+    if args.output.resolve() == args.boot_reference.resolve():
+        parser.error("output must not overwrite the reference backup")
+    with args.boot_reference.open("rb") as reference:
+        boot_partition = reference.read(0x400000)
+    for offset in [0x100000, 0x280000]:
+        if boot_partition[offset:offset + len(boot)] != boot:
+            parser.error("reference U-Boot copies must match the supplied signed image")
+    if not any(boot_partition[offset + 4:offset + 12] == b"DBBT\x00\x00\x00\x01"
+               for offset in range(0x80000, 0x100000, BLOCK_SIZE)):
+        parser.error("reference boot partition has no valid DBBT header")
     ubi = (args.images / "rootfs.ubi").read_bytes()
     if not ubi.startswith(b"UBI#") or len(ubi) % BLOCK_SIZE:
         parser.error("rootfs.ubi must be an erase-block-aligned UBI image")
@@ -36,8 +50,7 @@ def main():
     with args.output.open("wb") as image:
         for _ in range(NAND_SIZE // 1048576):
             image.write(b"\xff" * 1048576)
-        for offset, contents in [(0x100000, boot), (0x280000, boot),
-                                 (0x400000, ubi)]:
+        for offset, contents in [(0, boot_partition), (0x400000, ubi)]:
             image.seek(offset)
             image.write(contents)
     sha = hashlib.sha256()

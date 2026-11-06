@@ -122,6 +122,22 @@ int main(void) {
         }
     }
     if (failures) return 8;
+    unsigned char index8[] = {0, 1, 2, 2, 1, 3};
+    unsigned short index16[] = {0, 1, 2, 2, 1, 3};
+    unsigned int index32[] = {0, 1, 2, 2, 1, 3};
+    const void *indices[] = {index8, index16, index32};
+    GLenum index_types[] = {GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_UNSIGNED_INT};
+    for (unsigned i = 0; i < 3; i++) {
+        glClear(GL_COLOR_BUFFER_BIT);
+        glDrawElements(GL_TRIANGLES, 6, index_types[i], indices[i]);
+        glFinish();
+        glReadPixels(4, 4, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+        GLenum error = glGetError();
+        printf("Indexed %u-bit: %u %u %u %u; error 0x%x\n", 8u << i,
+               pixel[0], pixel[1], pixel[2], pixel[3], error);
+        if (error || pixel[0] != 255 || pixel[1] || pixel[2] ||
+            pixel[3] != 255) return 13;
+    }
     unsigned short normalized_uv[] = {0, 0, 65535, 0, 0, 65535, 65535, 65535};
     glVertexAttribPointer(1, 2, GL_UNSIGNED_SHORT, GL_TRUE, 0, normalized_uv);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

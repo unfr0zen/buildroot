@@ -1,4 +1,4 @@
-# Diamond3 Buildroot
+# Nest Buildroot
 
 Buildroot 2026.08.1, Linux 7.3.1, musl, BusyBox, eudev, iproute2, iw,
 wpa_supplicant, Dropbear, Bash, Starship 1.27.0, procps, htop, GNU grep,
@@ -21,7 +21,7 @@ make
 The upstream tree is the `buildroot/` Git submodule pinned to tag
 `2026.08.1`. `make prepare` initializes it. Board wiring and rootfs overlay
 live in
-`board/diamond3/`, kernel configuration in `linux/`, and external packages
+`board/diamond3/`; shared userspace lives in `board/common/`. Kernel configuration in `linux/`, and external packages
 in `package/`. `configs/diamond3_defconfig` selects the complete system.
 Docker builds use the named volume `diamond3-buildroot-output`; finished
 artifacts are copied to `output/images/`. `make menuconfig` and
@@ -106,10 +106,58 @@ initializes Starship with a plain-character, colored prompt; aliases live
 in `/etc/profile.d/30-aliases.sh`. `dmesg` uses util-linux color output.
 
 The piezo uses PWM1 and its active-low amplifier GPIO through the kernel
-`pwm-beeper` input driver. `diamond3-tone 2400 200` plays a 2400 Hz tone
+`pwm-beeper` input driver. `nest-tone 2400 200` plays a 2400 Hz tone
 for 200 milliseconds; omitting arguments uses 2000 Hz for 200 ms.
 The QEMU runner sets the PWM model clock to 66 MHz to match this kernel.
 
 With the UI running, `python3 scripts/check-usb.py` verifies an ACM root
 shell and an ECM DHCP exchange through `.work/nand.usb.sock`. This is a
 virtual USB host; it does not create a macOS USB Ethernet interface.
+
+## J49
+
+Build J49 with the same shell, tools, banner, SSH and USB configuration:
+
+```sh
+make j49-firmware NVS=/path/to/stock/wl12xx-nvs.bin
+make j49
+make j49-qemu-ui NAND=/absolute/path/to/stock-j49.raw FRESH=1
+```
+
+`make j49` builds in Docker, reusing the Diamond3 ARM musl toolchain; it
+builds that toolchain first if needed. Native Linux builds use
+`make BOARD=j49 j49-defconfig` followed by `make BOARD=j49` after the
+Diamond3 toolchain exists. Images are exported to `output/j49/images/`.
+The raw stock NAND must contain 2048-byte pages plus 64-byte OOBs.
+Only its first 4 MiB of data pages are retained for x-loader, U-Boot and
+redundant environments. The runner creates a separate ignored NAND copy;
+`FRESH=1` replaces that copy with the current build. The UI is
+`http://127.0.0.1:8076`. `make j49-smoke NAND=/path/to/stock.raw`
+checks a root shell and UBIFS mount on a fresh isolated NAND.
+
+| J49 NAND region | Offset | Size |
+|---|---:|---:|
+| Existing x-loader/U-Boot/environments | 0 | 4 MiB |
+| Legacy kernel with appended DTB | 0x400000 | 8 MiB |
+| UBI rootfs | 0xc00000 | 244 MiB |
+
+UBI autoresize uses the full root partition, minus metadata and bad-block
+reserves. The builder writes both bootloader BCH4 and Linux OMAP BCH4
+parity in the OOB. Its output is for QEMU; physical programming still
+requires the target's bad-block map and verified bootloader layout.
+
+The J49 device tree describes the AM3703, 64 MiB RAM, TPS65921, WL1271,
+Tianma TM025ZDZ01 320×320 DPI panel, LM3530 backlight, ADBS-A320 wheel,
+power button and timer11 PWM piezo amplifier. The panel's 9-bit SPI
+sequence and board pin configuration derive from Nest's GPL board and
+display sources. `j49-panel` and `j49-backlight` are kernel modules;
+`j49-wheel` emits `REL_DIAL` through uinput. `nest-tone` uses the same
+kernel beeper interface on both boards. CPU frequency scaling is disabled;
+the bootloader supplies the operating clock.
+
+The official Linux firmware package supplies WL1271 firmware. The private
+stock NVS file supplies board calibration and stays under `.work/`.
+Physical display, wheel calibration, radio and USB operation require
+hardware validation. QEMU's J49 MUSB model currently represents an
+unplugged peripheral: the image configures ACM/ECM and DHCP, but J49 USB
+host transfers are not emulated.

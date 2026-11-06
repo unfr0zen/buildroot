@@ -2,16 +2,16 @@
 case "$1" in
  start)
   mountpoint -q /sys/kernel/config || mount -t configfs none /sys/kernel/config
-  gadget=/sys/kernel/config/usb_gadget/diamond3
+  gadget=/sys/kernel/config/usb_gadget/$(hostname)
   [ -d "$gadget" ] && exit 0
   mkdir -p "$gadget"
   cd "$gadget" || exit 1
   echo 0x1d6b > idVendor
   echo 0x0104 > idProduct
   mkdir -p strings/0x409
-  echo diamond3 > strings/0x409/serialnumber
+  hostname > strings/0x409/serialnumber
   echo Homebrew > strings/0x409/manufacturer
-  echo 'Diamond3 console and Ethernet' > strings/0x409/product
+  echo "$(hostname) console and Ethernet" > strings/0x409/product
   echo 0xef > bDeviceClass
   echo 0x02 > bDeviceSubClass
   echo 0x01 > bDeviceProtocol

@@ -1,8 +1,6 @@
 #!/bin/sh
 set -eu
-sed -i '/^root:/s@:[^:]*$@:/bin/bash@' "$1/etc/passwd"
-sed -i '/^ttyGS0::/d' "$1/etc/inittab"
-echo 'ttyGS0::respawn:/sbin/getty -L -n -l /usr/sbin/console-shell ttyGS0 115200 vt100' >> "$1/etc/inittab"
+"$BR2_EXTERNAL_DIAMOND3_PATH/board/common/post_build.sh" "$1"
 firmware="$BR2_EXTERNAL_DIAMOND3_PATH/.work/firmware/brcm"
 mkdir -p "$1/lib/firmware/brcm"
 for name in brcmfmac43340-sdio.bin brcmfmac43340-sdio.txt; do
@@ -11,8 +9,6 @@ for name in brcmfmac43340-sdio.bin brcmfmac43340-sdio.txt; do
 done
 python3 "$BR2_EXTERNAL_DIAMOND3_PATH/scripts/mkenv.py" "$BINARIES_DIR"
 
-sed -i '/^tty1::/d' "$1/etc/inittab"
-echo 'tty1::respawn:/sbin/getty -L tty1 0 linux' >> "$1/etc/inittab"
 
 initramfs="$BUILD_DIR/diamond3-initramfs"
 mkdir -p "$initramfs/dev" "$initramfs/sys" "$initramfs/proc" "$initramfs/newroot"

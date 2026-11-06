@@ -38,7 +38,7 @@ usb_socket = nand.with_suffix('.usb.sock')
 usb_socket.unlink(missing_ok=True)
 command = [str(a.qemu), '-M', 'diamond3,usb0-hostchar=usbhost', '-drive', f'file={nand},if=none,id=nand,format=raw',
            '-display', 'none', '-monitor', 'none', '-serial', 'stdio', '-nic', 'user,model=bcm43341',
-           '-global', 'imx.pwm.clock-frequency=66000000',
+           '-global', 'driver=imx.pwm,property=clock-frequency,value=66000000',
            '-chardev', f'socket,id=usbhost,path={usb_socket},server=on,wait=off']
 if a.ui:
     if a.smoke:
@@ -91,7 +91,7 @@ try:
                 child.stdin.flush()
                 tail = b''
             clean = re.sub(rb'\x1b\[[0-?]*[ -/]*[@-~]', b'', tail)
-            if a.smoke and not checked and booted and (b'# ' in clean or b'root@diamond3' in clean):
+            if a.smoke and not checked and booted and b'root@diamond3' in clean:
                 checked = True
                 child.stdin.write(b'id; uname -r; df -h /; echo DIAMOND3_SMOKE_OK\n')
                 child.stdin.flush()

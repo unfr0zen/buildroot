@@ -1,0 +1,2 @@
+config BR2_PACKAGE_NEST_TOOLS
+ bool "Nest board tools"

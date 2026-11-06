@@ -1,0 +1,5 @@
+#!/bin/sh
+case "$1" in
+ start) start-stop-daemon -S -b -m -p /run/j49-wheel.pid -x /usr/sbin/j49-wheel ;;
+ stop) start-stop-daemon -K -p /run/j49-wheel.pid ;;
+esac

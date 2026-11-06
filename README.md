@@ -37,5 +37,16 @@ For native Linux builds, install Buildroot host dependencies and run
 `make diamond3-defconfig && make`; then `make BOARD=j49 j49-defconfig`
 and `make BOARD=j49`. Docker builds reuse the Diamond3 glibc toolchain for J49.
 
-Generated NAND images target QEMU. Physical flashing and HAB authentication
-require device validation; preserve the original signed bootloader and bad-block map.
+To package a physical Diamond3 test image after building:
+
+```sh
+make diamond3-image UBOOT='/path/to/u-boot-6.5-14-signed.hab'
+```
+
+`output/images/diamond3-buildroot.bin` is a 512 MiB logical NAND image for
+`unfr0zen restore`, with a `.sha256` sidecar. It uses the hardware DTB.
+Restore preserves or regenerates ROM boot-control data and preserves the chip's
+bad-block table. This is not an OOB/ECC image for a raw programmer.
+Physical boot and HAB authentication remain unverified.
+The restore tool's final stock-USB wait can time out: this image uses
+USB `1d6b:0104`. Check the UART or USB serial console for Linux startup.

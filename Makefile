@@ -24,6 +24,11 @@ qemu:
 	@test -n "$(UBOOT)" || { echo 'Set UBOOT=/absolute/path/to/signed.hab'; exit 1; }
 	python3 scripts/qemu.py --uboot "$(UBOOT)" $(if $(FRESH),--fresh,) $(if $(BLE_HCI_TEST),--ble-hci-test,)
 
+.PHONY: diamond3-image
+diamond3-image:
+	@test -n "$(UBOOT)" || { echo 'Set UBOOT=/absolute/path/to/signed.hab'; exit 1; }
+	python3 scripts/diamond3-nand.py --uboot "$(UBOOT)"
+
 .PHONY: firmware
 firmware:
 	@test -n "$(FIRMWARE_DIR)" || { echo 'Set FIRMWARE_DIR to the stock lib/firmware/brcm directory'; exit 1; }

@@ -142,5 +142,26 @@ int main(void) {
         if (pixel[0] != 255 || pixel[1] || pixel[2] != selected * 255 ||
             pixel[3] != 255) return 10;
     }
+    fs = "precision mediump float; varying vec2 texcoord; uniform sampler2D image;"
+         "void main(){gl_FragColor=texture2D(image,texcoord);}";
+    glShaderSource(fragment, 1, &fs, NULL);
+    glCompileShader(fragment);
+    glLinkProgram(program);
+    glUseProgram(program);
+    unsigned char alpha_colors[] = {255, 255, 255, 0, 255, 0, 0, 128,
+                                    0, 255, 0, 255, 0, 0, 255, 64};
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, alpha_colors);
+    glClearColor(0.25, 0.25, 0.25, 1);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glFinish();
+    glReadPixels(4, 4, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+    printf("Transparent white: %u %u %u %u; error 0x%x\n",
+           pixel[0], pixel[1], pixel[2], pixel[3], glGetError());
+    if (pixel[0] < 63 || pixel[0] > 65 || pixel[1] < 63 || pixel[1] > 65 ||
+        pixel[2] < 63 || pixel[2] > 65) return 11;
     return 0;
 }

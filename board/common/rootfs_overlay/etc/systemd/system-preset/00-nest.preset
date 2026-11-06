@@ -1,0 +1,5 @@
+disable avahi-dnsconfd.service
+enable nest-*.service
+enable avahi-daemon.service
+enable getty@tty1.service
+enable jitterentropy.service

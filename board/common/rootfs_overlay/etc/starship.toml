@@ -1,0 +1,23 @@
+add_newline = false
+format = "$username$hostname$directory$character"
+
+[username]
+show_always = true
+style_root = "bold cyan"
+format = "[$user]($style)"
+
+[hostname]
+ssh_only = false
+format = "[@$hostname](bold cyan) "
+
+[directory]
+style = "bold blue"
+read_only = " ro"
+truncation_length = 3
+
+[status]
+disabled = true
+
+[character]
+success_symbol = "[>](bold green)"
+error_symbol = "[>](bold red)"

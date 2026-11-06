@@ -1,0 +1,15 @@
+[Unit]
+Description=Thermostat framebuffer console font
+DefaultDependencies=no
+Wants=nest-display.service
+After=systemd-remount-fs.service nest-display.service
+Before=getty@tty1.service
+
+[Service]
+Type=oneshot
+TimeoutStartSec=20
+ExecStart=/usr/libexec/nest-console-font start
+RemainAfterExit=yes
+
+[Install]
+WantedBy=sysinit.target

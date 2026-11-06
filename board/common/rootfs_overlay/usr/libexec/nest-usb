@@ -1,0 +1,30 @@
+#!/bin/sh
+case "$1" in
+ start)
+  while ! ls /sys/class/udc/* >/dev/null 2>&1; do sleep 0.05; done
+  mountpoint -q /sys/kernel/config || mount -t configfs none /sys/kernel/config
+  gadget=/sys/kernel/config/usb_gadget/$(hostname)
+  [ -d "$gadget" ] && exit 0
+  mkdir -p "$gadget"
+  cd "$gadget" || exit 1
+  echo 0x1d6b > idVendor
+  echo 0x0104 > idProduct
+  mkdir -p strings/0x409
+  hostname > strings/0x409/serialnumber
+  echo Homebrew > strings/0x409/manufacturer
+  echo "$(hostname) console and Ethernet" > strings/0x409/product
+  echo 0xef > bDeviceClass
+  echo 0x02 > bDeviceSubClass
+  echo 0x01 > bDeviceProtocol
+  mkdir -p configs/c.1 functions/acm.usb0 functions/ecm.usb0
+  echo 02:00:00:77:00:01 > functions/ecm.usb0/dev_addr
+  echo 02:00:00:77:00:02 > functions/ecm.usb0/host_addr
+  ln -s functions/ecm.usb0 configs/c.1/
+  ln -s functions/acm.usb0 configs/c.1/
+  for controller in /sys/class/udc/*; do
+   [ -e "$controller" ] || exit 1
+   basename "$controller" > UDC
+   break
+  done
+  ;;
+esac

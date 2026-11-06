@@ -1,0 +1,12 @@
+[Unit]
+Description=USB ACM and ECM gadget
+After=local-fs.target sys-kernel-config.mount
+Requires=sys-kernel-config.mount
+[Service]
+Type=oneshot
+TimeoutStartSec=20
+ExecStart=/usr/libexec/nest-usb start
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+[Unit]
+Description=Persistent SSH host identity
+After=local-fs.target jitterentropy.service
+Wants=jitterentropy.service
+Before=dropbear.service
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/usr/sbin/nest-ssh-keys
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

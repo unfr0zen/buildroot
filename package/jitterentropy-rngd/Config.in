@@ -1,0 +1,5 @@
+config BR2_PACKAGE_JITTERENTROPY_RNGD
+ bool "jitterentropy-rngd"
+ depends on BR2_TOOLCHAIN_HAS_THREADS
+ help
+   Seed the kernel random pool using the Jitter RNG's checked noise source.

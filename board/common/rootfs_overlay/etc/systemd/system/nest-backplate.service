@@ -1,0 +1,11 @@
+[Unit]
+Description=Backplate sensor MCU
+After=nest-hardware.service
+[Service]
+EnvironmentFile=/etc/default/nest-backplate
+ExecStart=/usr/sbin/nest-backplate ${BACKPLATE_UART}
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

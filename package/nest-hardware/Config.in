@@ -1,0 +1,3 @@
+config BR2_PACKAGE_NEST_HARDWARE
+ bool "Nest hardware telemetry and GPIO interfaces"
+ depends on BR2_LINUX_KERNEL

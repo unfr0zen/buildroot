@@ -1,0 +1,111 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+set -u
+heading() { if [[ -t 1 ]]; then printf '\n\033[1;36m%s\033[0m\n' "$1"; else printf '\n%s\n' "$1"; fi; }
+value() { cat "$1" 2>/dev/null || printf 'unavailable'; }
+heading "$(hostname) telemetry"
+voltage=$(value /sys/class/power_supply/nest-battery/voltage_now)
+if [[ $voltage =~ ^[0-9]+$ ]]; then
+ awk -v v="$voltage" 'BEGIN { printf "Battery: %.3f V\n", v / 1000000 }'
+else
+ printf 'Battery: unavailable\n'
+fi
+for zone in /sys/class/thermal/thermal_zone*; do
+ [[ -f $zone/type ]] || continue
+ type=$(value "$zone/type")
+ case "$type" in *cpu*|*CPU*|*imx*|*mpu*)
+  temp=$(value "$zone/temp")
+  if [[ $temp =~ ^-?[0-9]+$ ]]; then
+   awk -v t="$temp" -v name="$type" 'BEGIN { printf "CPU (%s): %.1f C\n", name, t / 1000 }'
+  else printf 'CPU (%s): unavailable\n' "$type"; fi
+  ;;
+ esac
+ done
+read -r uptime _ < /proc/uptime
+now=${uptime%%.*}
+declare -A bp
+if [[ -r /run/nest/backplate.state ]]; then
+ while IFS='=' read -r key number; do
+  [[ $key =~ ^[a-z_]+$ && $number =~ ^-?[0-9]+$ ]] && bp[$key]=$number
+ done < /run/nest/backplate.state
+fi
+if (( ${bp[temp_at]:-0} > 0 && now - ${bp[temp_at]:-0} <= 15 )); then
+ temp=${bp[temperature_centi_c]:--2147483648}
+ rh=${bp[humidity_permille]:--1}
+ if (( temp != -2147483648 )); then awk -v t="$temp" 'BEGIN { printf "Ambient: %.2f C\n", t / 100 }'; else echo 'Ambient: unavailable'; fi
+ if (( rh >= 0 )); then awk -v h="$rh" 'BEGIN { printf "Humidity: %.1f %% RH\n", h / 10 }'; else echo 'Humidity: unavailable'; fi
+else echo 'Ambient/humidity: unavailable (no fresh backplate temperature frame)'; fi
+if (( ${bp[light_at]:-0} > 0 && now - ${bp[light_at]:-0} <= 15 )); then
+ printf 'Ambient light: visible=%s infrared=%s (raw counts, -1 = unavailable)\n' "${bp[light_visible_raw]:--1}" "${bp[light_infrared_raw]:--1}"
+fi
+if (( ${bp[packet_at]:-0} > 0 && now - ${bp[packet_at]:-0} <= 15 )); then
+ motion=0
+ (( now - ${bp[motion_at]:-0} <= 10 )) && motion=${bp[motion]:-0}
+ printf 'Presence: %s\n' "$motion"
+fi
+if (( ${bp[packet_at]:-0} > 0 && now - ${bp[packet_at]:-0} <= 15 )); then
+ heading 'Backplate digital inputs'
+ for record in '0004:Wires' '0009:Inserted pins' '0007:Near PIR' '0008:Proximity' '0017:Status'; do
+  code=${record%%:*}; label=${record#*:}
+  file=/run/nest/backplate-messages/$code.hex
+  [[ -r $file ]] || continue
+  read -r hex < "$file"
+  [[ $hex =~ ^[0-9a-f]*$ ]] || continue
+  printf '%s (raw payload): %s\n' "$label" "$hex"
+ done
+fi
+heading 'Analog inputs (raw ADC codes)'
+for device in /sys/bus/iio/devices/iio:device*; do
+ [[ -d $device ]] || continue
+ name=$(basename "$(readlink -f "$device/of_node" 2>/dev/null || printf '%s' "$device")")
+ for input in "$device"/in_*_raw; do
+  [[ -f $input && $input != *_mean_raw ]] || continue
+  printf '%s/%s: %s\n' "$name" "$(basename "$input")" "$(value "$input")"
+ done
+ for scale in "$device"/in_*_scale; do
+  [[ -f $scale ]] || continue
+  printf '%s/%s: %s\n' "$name" "$(basename "$scale")" "$(value "$scale")"
+ done
+ done
+if [[ -d /sys/devices/platform/twl4030_madc_hwmon ]]; then
+ heading 'J49 stock MADC readings (mV at ADC pin, including thermistor/current channels)'
+ for input in /sys/devices/platform/twl4030_madc_hwmon/in*_input; do
+  label=$(value "${input%_input}_label")
+  printf '%s: %s mV\n' "$label" "$(value "$input")"
+ done
+fi
+heading 'Board digital I/O (physical pin levels)'
+for device in sensor-mcu-gpios diamond-backplate em35x-gpios diamond-zigbee ble0-da14580-gpios board-inputs diamond-battery; do
+ for input in /sys/devices/platform/"$device"/*/value; do
+  [[ -f $input ]] || continue
+  printf '%s/%s: %s\n' "$device" "$(basename "$(dirname "$input")")" "$(value "$input")"
+ done
+ done
+heading 'UART buses'
+for uart in /dev/ttymxc* /dev/ttyS[0-9]*; do
+ [[ -c $uart ]] || continue
+ path=$(readlink -f "/sys/class/tty/$(basename "$uart")/device")
+ while [[ $path == /sys/devices/* ]]; do
+  if [[ -r $path/of_node/compatible ]] && tr '\000' '\n' < "$path/of_node/compatible" | grep -Eq 'uart|serial'; then
+   printf '%s (%s)\n' "$uart" "$(basename "$(readlink -f "$path/of_node")")"
+   break
+  fi
+  path=${path%/*}
+ done
+ done
+heading 'I2C buses and declared devices'
+for bus in /sys/class/i2c-dev/i2c-*; do
+ [[ -d $bus ]] && printf '/dev/%s: %s\n' "$(basename "$bus")" "$(value "$bus/name")"
+ done
+for device in /sys/bus/i2c/devices/*-*/name; do
+ [[ -f $device ]] && printf '%s: %s\n' "$(basename "$(dirname "$device")")" "$(value "$device")"
+ done
+heading 'SPI buses and declared devices'
+for bus in /sys/class/spi_master/spi*; do
+ [[ -d $bus ]] && printf '%s\n' "$(basename "$bus")"
+ done
+for device in /sys/bus/spi/devices/spi*; do
+ [[ -d $device ]] || continue
+ driver=$(readlink -f "$device/driver" 2>/dev/null || true)
+ printf '%s: %s (driver=%s)\n' "$(basename "$device")" "$(value "$device/modalias")" "${driver##*/}"
+ done

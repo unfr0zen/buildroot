@@ -1,0 +1,10 @@
+[Unit]
+Description=Thermostat wheel input
+After=nest-hardware.service
+
+[Service]
+ExecStart=/usr/sbin/diamond3-wheel
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

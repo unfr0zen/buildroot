@@ -1,0 +1,14 @@
+[Unit]
+Description=Thermostat hardware setup
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStartPre=/sbin/modprobe cfg80211
+ExecStartPre=/sbin/modprobe -a nest-gpio-exporter nest-adc-battery
+ExecStart=/usr/libexec/nest-spi-userspace start
+ExecStart=/usr/libexec/nest-wireless-regdb start
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

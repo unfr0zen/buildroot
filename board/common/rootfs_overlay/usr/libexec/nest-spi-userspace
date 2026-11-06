@@ -1,0 +1,12 @@
+#!/bin/sh
+case "$1" in
+ start)
+  for node in /sys/bus/spi/devices/*; do
+   [ -r "$node/of_node/compatible" ] || continue
+   tr '\000' '\n' < "$node/of_node/compatible" | grep -qx 'nestlabs,em357' || continue
+   [ -L "$node/driver" ] && continue
+   echo spidev > "$node/driver_override"
+   basename "$node" > /sys/bus/spi/drivers/spidev/bind
+  done
+  ;;
+esac

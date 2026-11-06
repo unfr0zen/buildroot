@@ -1,0 +1,2 @@
+SUBSYSTEM=="tty", KERNEL=="ttyS2", SYMLINK+="ttysensormcu0"
+SUBSYSTEM=="spidev", KERNEL=="spidev1.0", SYMLINK+="spidev_em35x"

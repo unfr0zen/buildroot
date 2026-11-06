@@ -1,0 +1,215 @@
+// SPDX-License-Identifier: GPL-2.0-only
+#include <linux/module.h>
+#include <linux/spi/spi.h>
+#include <linux/gpio/consumer.h>
+#include <linux/delay.h>
+#include <linux/of.h>
+#include <drm/drm_panel.h>
+#include <drm/drm_connector.h>
+#include <drm/drm_modes.h>
+#include <linux/media-bus-format.h>
+#include <video/display_timing.h>
+#include <video/of_display_timing.h>
+
+struct hx8369_cmd {
+	u8 cmd;
+	u8 len;
+	u8 data[34];
+	u16 delay_ms;
+};
+
+static const struct hx8369_cmd hx8369_setextc = {0xb9, 3, {0xff, 0x83, 0x69}, 10};
+
+static const struct hx8369_cmd hx8369_init[3][15] = {
+    {
+	{0xb2,
+	 15,
+	 {0x00, 0x3b, 0x04, 0x04, 0xf0, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x04, 0x04, 0x00,
+	  0x01}},
+	{0xb4, 5, {0x0a, 0x1d, 0x80, 0x00, 0x00}},
+	{0xb6, 2, {0x3f, 0x3f}},
+	{0xcc, 1, {0x02}},
+	{0xd5, 26, {0x00, 0x01, 0x03, 0x34, 0x01, 0x05, 0x00, 0x70, 0x11, 0x13, 0x00, 0x00, 0x60,
+		    0x24, 0x71, 0x35, 0x00, 0x00, 0x73, 0x05, 0x62, 0x14, 0x07, 0x0f, 0x04, 0x04}},
+	{0xb1,
+	 19,
+	 {0x01, 0x00, 0x34, 0x0a, 0x00, 0x11, 0x11, 0x2f, 0x37, 0x3f, 0x3f, 0x01, 0x22, 0x01, 0xe6,
+	  0xe6, 0xe6, 0xe6, 0xe6}},
+	{0x00, 1, {0x00}},
+	{0xe0, 34, {0x10, 0x1a, 0x26, 0x2a, 0x2b, 0x2f, 0x33, 0x4b, 0x04, 0x0a, 0x0e, 0x13,
+		    0x15, 0x14, 0x14, 0x13, 0x15, 0x10, 0x1b, 0x26, 0x2a, 0x2b, 0x2f, 0x33,
+		    0x4a, 0x00, 0x0a, 0x0e, 0x14, 0x16, 0x14, 0x14, 0x12, 0x18}},
+	{0x11, 0, {}, 120},
+	{0x29, 0, {}},
+    },
+    {
+	{0xb2,
+	 15,
+	 {0x00, 0x33, 0x03, 0x03, 0x70, 0x00, 0xff, 0x06, 0x00, 0x00, 0x00, 0x03, 0x03, 0x00,
+	  0x01}},
+	{0xb4, 5, {0x00, 0x1c, 0x84, 0x06, 0x02}},
+	{0xb6, 2, {0x3c, 0x3c}},
+	{0xcc, 1, {0x02}},
+	{0xd5, 26, {0x00, 0x08, 0x03, 0x00, 0x01, 0x0a, 0x00, 0x85, 0x11, 0x13, 0x00, 0x01, 0x00,
+		    0x64, 0x00, 0x75, 0x01, 0x00, 0x44, 0x57, 0x44, 0x46, 0x07, 0x0f, 0x02, 0x03}},
+	{0xb1,
+	 19,
+	 {0x01, 0x00, 0x34, 0x07, 0x00, 0x10, 0x10, 0x22, 0x32, 0x3f, 0x3f, 0x07, 0x23, 0x01, 0xe6,
+	  0xe6, 0xe6, 0xe6, 0xe6}},
+	{0x00, 1, {0x00}},
+	{0xe0, 34, {0x00, 0x1a, 0x20, 0x37, 0x3b, 0x3f, 0x2f, 0x4d, 0x07, 0x0d, 0x0f, 0x12,
+		    0x14, 0x12, 0x14, 0x10, 0x18, 0x00, 0x19, 0x21, 0x38, 0x3b, 0x3f, 0x2f,
+		    0x4c, 0x06, 0x0d, 0x0e, 0x12, 0x14, 0x14, 0x14, 0x11, 0x17}},
+	{0x11, 0, {}, 120},
+	{0x29, 0, {}},
+    },
+    {
+	{0xb2,
+	 15,
+	 {0x00, 0x33, 0x03, 0x03, 0x70, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x03, 0x03, 0x00,
+	  0x01}},
+	{0xb4, 5, {0x0a, 0x1d, 0x69, 0x0e, 0x06}},
+	{0xb6, 2, {0x31, 0x31}},
+	{0xcc, 1, {0x02}},
+	{0xd5, 26, {0x00, 0x04, 0x00, 0x00, 0x01, 0x04, 0x28, 0x98, 0x33, 0x37, 0x02, 0x31, 0x46,
+		    0x8a, 0x57, 0x9b, 0x00, 0x00, 0x73, 0x15, 0x61, 0x04, 0x07, 0x0f, 0x04, 0x00}},
+	{0xb1,
+	 19,
+	 {0x01, 0x00, 0x54, 0x0b, 0x00, 0x0f, 0x0f, 0x34, 0x3c, 0x3f, 0x3f, 0x07, 0x22, 0x01, 0xe6,
+	  0xe6, 0xe6, 0xe6, 0xe6}},
+	{0xbf, 1, {0x70}},
+	{0xe0, 34, {0x00, 0x0d, 0x0f, 0x2f, 0x32, 0x3e, 0x1d, 0x3c, 0x09, 0x0e, 0x0d, 0x10,
+		    0x12, 0x11, 0x12, 0x11, 0x18, 0x00, 0x0d, 0x0f, 0x2f, 0x32, 0x3e, 0x1d,
+		    0x3c, 0x09, 0x0e, 0x0d, 0x10, 0x12, 0x11, 0x12, 0x11, 0x18}},
+	{0x11, 0, {}, 120},
+	{0x29, 0, {}},
+    }};
+
+struct diamond_panel {
+	struct drm_panel panel;
+	struct spi_device *spi;
+	struct gpio_desc *reset;
+};
+static int command(struct diamond_panel *p, const struct hx8369_cmd *c)
+{
+	u16 words[35];
+	int error;
+	words[0] = c->cmd;
+	for (int i = 0; i < c->len; i++)
+		words[i + 1] = 0x100 | c->data[i];
+	error = spi_write(p->spi, words, (c->len + 1) * sizeof(*words));
+	if (!error && c->delay_ms)
+		msleep(c->delay_ms);
+	return error;
+}
+static u8 read_id(struct diamond_panel *p, u8 reg)
+{
+	struct hx8369_cmd select = {0xfe, 1, {reg}};
+	u16 request = 0xff;
+	u8 response = 0xff;
+	struct spi_transfer transfers[] = {
+	    {.tx_buf = &request, .len = 2, .bits_per_word = 9},
+	    {.rx_buf = &response, .len = 1, .bits_per_word = 8},
+	};
+	if (command(p, &select) || spi_sync_transfer(p->spi, transfers, 2))
+		return 0xff;
+	return response;
+}
+static int prepare(struct drm_panel *panel)
+{
+	struct diamond_panel *p = container_of(panel, struct diamond_panel, panel);
+	unsigned int id;
+	int variant, i, error;
+	gpiod_set_value_cansleep(p->reset, 1);
+	msleep(10);
+	gpiod_set_value_cansleep(p->reset, 0);
+	msleep(10);
+	gpiod_set_value_cansleep(p->reset, 1);
+	msleep(120);
+	error = command(p, &hx8369_setextc);
+	if (error)
+		return error;
+	id = ((read_id(p, 0xdc) << 16) | (read_id(p, 0xdb) << 8) | read_id(p, 0xda)) & ~0x8000;
+	if (id == 0x11)
+		variant = 0;
+	else if (id == 0x232221)
+		variant = 1;
+	else {
+		u32 selected;
+		if (of_property_read_u32(panel->dev->of_node, "nestlabs,panel-variant",
+					 &selected) ||
+		    selected > 2)
+			return -ENODEV;
+		variant = selected;
+	}
+	for (i = 0; i < ARRAY_SIZE(hx8369_init[variant]); i++)
+		if (hx8369_init[variant][i].cmd) {
+			error = command(p, &hx8369_init[variant][i]);
+			if (error)
+				return error;
+		}
+	return 0;
+}
+static int get_modes(struct drm_panel *panel, struct drm_connector *connector)
+{
+	struct drm_display_mode *mode;
+	static const u32 format = MEDIA_BUS_FMT_RGB888_1X24;
+	mode = drm_mode_create(connector->dev);
+	if (!mode)
+		return -ENOMEM;
+	mode->clock = 19700;
+	mode->hdisplay = 480;
+	mode->hsync_start = 486;
+	mode->hsync_end = 496;
+	mode->htotal = 502;
+	mode->vdisplay = 640;
+	mode->vsync_start = 646;
+	mode->vsync_end = 648;
+	mode->vtotal = 654;
+	mode->flags = DRM_MODE_FLAG_NHSYNC | DRM_MODE_FLAG_NVSYNC;
+	mode->type = DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED;
+	drm_mode_set_name(mode);
+	drm_mode_probed_add(connector, mode);
+	drm_display_info_set_bus_formats(&connector->display_info, &format, 1);
+	connector->display_info.bus_flags =
+	    DRM_BUS_FLAG_DE_HIGH | DRM_BUS_FLAG_PIXDATA_DRIVE_NEGEDGE;
+	return 1;
+}
+static const struct drm_panel_funcs funcs = {.prepare = prepare, .get_modes = get_modes};
+static int probe(struct spi_device *spi)
+{
+	struct diamond_panel *p = devm_drm_panel_alloc(&spi->dev, struct diamond_panel, panel,
+						       &funcs, DRM_MODE_CONNECTOR_DPI);
+	int error;
+	if (IS_ERR(p))
+		return PTR_ERR(p);
+	p->spi = spi;
+	p->reset = devm_gpiod_get(&spi->dev, "reset", GPIOD_OUT_LOW);
+	if (IS_ERR(p->reset))
+		return PTR_ERR(p->reset);
+	spi->mode = SPI_MODE_3;
+	spi->bits_per_word = 9;
+	error = spi_setup(spi);
+	if (error)
+		return error;
+	spi_set_drvdata(spi, p);
+	drm_panel_add(&p->panel);
+	return 0;
+}
+static void remove_panel(struct spi_device *spi)
+{
+	struct diamond_panel *p = spi_get_drvdata(spi);
+	drm_panel_remove(&p->panel);
+}
+static const struct of_device_id match[] = {{.compatible = "nestlabs,diamond3-panel"}, {}};
+MODULE_DEVICE_TABLE(of, match);
+static const struct spi_device_id ids[] = {{"diamond3-panel", 0}, {}};
+MODULE_DEVICE_TABLE(spi, ids);
+static struct spi_driver diamond3_panel_driver = {
+    .probe = probe,
+    .remove = remove_panel,
+    .id_table = ids,
+    .driver = {.name = "diamond3-panel", .of_match_table = match}};
+module_spi_driver(diamond3_panel_driver);
+MODULE_DESCRIPTION("Nest Diamond3 HX8369 panel");
+MODULE_LICENSE("GPL");

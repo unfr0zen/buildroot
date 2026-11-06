@@ -1,0 +1,12 @@
+[Unit]
+Description=UART login console
+After=systemd-user-sessions.service
+
+[Service]
+ExecStartPre=/bin/dmesg -n 1
+EnvironmentFile=/etc/default/nest-console
+ExecStart=/sbin/agetty --noreset --noclear --local-line ${NEST_CONSOLE} 115200 xterm-256color
+Restart=always
+
+[Install]
+WantedBy=getty.target

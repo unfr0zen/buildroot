@@ -1,0 +1,3 @@
+config BR2_PACKAGE_DIAMOND3_BOARD
+ bool "Diamond3 board drivers"
+ depends on BR2_LINUX_KERNEL

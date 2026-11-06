@@ -1,0 +1,4 @@
+config BR2_PACKAGE_NBNSD
+ bool "nbnsd"
+ help
+   Minimal NetBIOS hostname responder for UDP port 137.

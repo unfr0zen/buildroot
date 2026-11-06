@@ -1,0 +1,4 @@
+config BR2_PACKAGE_J49_UBOOT
+ bool "J49 U-Boot"
+ depends on BR2_arm
+ select BR2_PACKAGE_J49_XLOADER

@@ -1,0 +1,3 @@
+config BR2_PACKAGE_J49_XLOADER
+ bool "J49 NAND x-loader"
+ depends on BR2_arm

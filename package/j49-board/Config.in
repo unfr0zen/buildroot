@@ -1,0 +1,3 @@
+config BR2_PACKAGE_J49_BOARD
+ bool "J49 board drivers"
+ depends on BR2_LINUX_KERNEL

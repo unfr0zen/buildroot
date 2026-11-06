@@ -14,9 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 p = argparse.ArgumentParser(description=__doc__)
 p.add_argument("--uboot", type=Path,
                default=ROOT / "output/images/u-boot-sdp-5.2d43-nand.bin")
-p.add_argument(
-    "--qemu", type=Path, default=ROOT.parent / "qemu/qemu-src/build/qemu-system-arm"
-)
+p.add_argument("--qemu", type=Path,
+               default=ROOT / "qemu/qemu-src/build/qemu-system-arm",
+               help="override the bundled emulator binary")
 p.add_argument("--ui", action="store_true")
 p.add_argument(
     "--ble-hci-test", action="store_true",
@@ -29,6 +29,9 @@ p.add_argument(
     "--smoke", action="store_true", help="exit after confirming the root shell"
 )
 a = p.parse_args()
+emulator = ROOT / "qemu"
+if not (emulator / "ui/backplate.py").is_file():
+    p.error("QEMU submodule is missing; run make qemu-prepare")
 images = ROOT / "output/images"
 nand = a.nand.resolve()
 nand.parent.mkdir(exist_ok=True)
@@ -86,7 +89,7 @@ for number in range(2, 6):
 command += ["-serial", "chardev:sensor"]
 backplate_command = [
     sys.executable,
-    str(ROOT.parent / "qemu/ui/backplate.py"),
+    str(emulator / "ui/backplate.py"),
     "--serial",
     str(sensor_socket),
     "--board",
@@ -121,7 +124,7 @@ if a.ui:
     ui = subprocess.Popen(
         [
             sys.executable,
-            str(ROOT.parent / "qemu/ui/ui.py"),
+            str(emulator / "ui/ui.py"),
             "--board",
             str(sockets[1]),
             "--console",

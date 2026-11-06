@@ -17,10 +17,13 @@ p.add_argument("--ui", action="store_true")
 p.add_argument("--smoke", action="store_true")
 p.add_argument("--nand", type=Path, default=root / ".work/j49-nand.raw")
 p.add_argument("--port", type=int, default=8076)
-p.add_argument(
-    "--qemu", type=Path, default=root.parent / "qemu/qemu-src/build/qemu-system-arm"
-)
+p.add_argument("--qemu", type=Path,
+               default=root / "qemu/qemu-src/build/qemu-system-arm",
+               help="override the bundled emulator binary")
 a = p.parse_args()
+emulator = root / "qemu"
+if not (emulator / "ui/backplate.py").is_file():
+    p.error("QEMU submodule is missing; run make qemu-prepare")
 if a.ui and a.smoke:
     p.error("--ui and --smoke cannot be combined")
 nand = a.nand.resolve()
@@ -67,7 +70,7 @@ command += [
 ]
 backplate_command = [
     sys.executable,
-    str(root.parent / "qemu/ui/backplate.py"),
+    str(emulator / "ui/backplate.py"),
     "--serial",
     str(sensor_socket),
     "--board",
@@ -123,7 +126,7 @@ if a.ui:
     ui = subprocess.Popen(
         [
             sys.executable,
-            str(root.parent / "qemu/ui/ui.py"),
+            str(emulator / "ui/ui.py"),
             "--board",
             str(board),
             "--console",

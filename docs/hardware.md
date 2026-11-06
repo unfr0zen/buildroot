@@ -85,7 +85,7 @@ unknown firmware. Onboard BlueZ operation requires HCI-capable firmware or
 a validated protocol bridge. QEMU models the DA14580 UART boot ROM and base GTL commands. Its optional
 HCI test personality supports BlueZ with a virtual GATT peer; it does not
 execute Nest firmware or provide HCI firmware for physical devices. See
-[QEMU BLE UART](../../qemu/docs/qemu-da14580.md).
+[QEMU BLE UART](../qemu/docs/qemu-da14580.md).
 
 Physical panel, radio, analog calibration and sound require device testing.
 

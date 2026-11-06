@@ -15,7 +15,9 @@ make qemu-ui
 Diamond3 builds download Nest's public signed `u-boot-sdp-5.2d43.hab`,
 verify its SHA-256, and generate a NAND wrapper without modifying signed bytes.
 Bootloader binaries and device backups are not stored in Git.
-Images: `output/images/`. The QEMU launcher prints its UI URL at startup.
+Images: `output/images/`. QEMU is a pinned Git submodule. Emulator targets
+initialize and build it automatically when needed, then print the UI URL.
+`make qemu-build` rebuilds it explicitly.
 
 ```sh
 make diamond3-image BOOT_NAND='/path/to/diamond3-logical-nand-backup.bin'

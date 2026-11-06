@@ -82,7 +82,10 @@ USB Bluetooth kernel drivers. The stock DA14580 startup uses `da-loader`
 at 57600 baud and loads `nl_ble_app_firmware.bin`. The stock `ble-ping` tool sends a GTL frame (type `0x05`, message
 `0xc801`); installing BlueZ does not convert that protocol. No automatic H4 attachment is attempted against
 unknown firmware. Onboard BlueZ operation requires HCI-capable firmware or
-a validated protocol bridge. QEMU does not currently emulate the DA14580.
+a validated protocol bridge. QEMU models the DA14580 UART boot ROM and base GTL commands. Its optional
+HCI test personality supports BlueZ with a virtual GATT peer; it does not
+execute Nest firmware or provide HCI firmware for physical devices. See
+[QEMU BLE UART](../../qemu/docs/qemu-da14580.md).
 
 Physical panel, radio, analog calibration and sound require device testing.
 

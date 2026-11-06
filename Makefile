@@ -22,7 +22,7 @@ docker:
 .PHONY: qemu
 qemu:
 	@test -n "$(UBOOT)" || { echo 'Set UBOOT=/absolute/path/to/signed.hab'; exit 1; }
-	python3 scripts/qemu.py --uboot "$(UBOOT)" $(if $(FRESH),--fresh,)
+	python3 scripts/qemu.py --uboot "$(UBOOT)" $(if $(FRESH),--fresh,) $(if $(BLE_HCI_TEST),--ble-hci-test,)
 
 .PHONY: firmware
 firmware:
@@ -42,7 +42,7 @@ rom:
 .PHONY: qemu-ui smoke
 qemu-ui:
 	@test -n "$(UBOOT)" || { echo 'Set UBOOT=/absolute/path/to/signed.hab'; exit 1; }
-	python3 scripts/qemu.py --uboot "$(UBOOT)" --ui $(if $(FRESH),--fresh,)
+	python3 scripts/qemu.py --uboot "$(UBOOT)" --ui $(if $(FRESH),--fresh,) $(if $(BLE_HCI_TEST),--ble-hci-test,)
 smoke:
 	@test -n "$(UBOOT)" || { echo 'Set UBOOT=/absolute/path/to/signed.hab'; exit 1; }
 	python3 scripts/qemu.py --uboot "$(UBOOT)" --nand .work/smoke-nand.bin --fresh --smoke

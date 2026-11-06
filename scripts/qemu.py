@@ -17,6 +17,10 @@ p.add_argument(
     "--qemu", type=Path, default=ROOT.parent / "qemu/qemu-src/build/qemu-system-arm"
 )
 p.add_argument("--ui", action="store_true")
+p.add_argument(
+    "--ble-hci-test", action="store_true",
+    help="use synthetic HCI test firmware on the emulated DA14580",
+)
 p.add_argument("--port", type=int, default=8075)
 p.add_argument("--nand", type=Path, default=ROOT / ".work/nand.bin")
 p.add_argument("--fresh", action="store_true")
@@ -47,7 +51,7 @@ usb_socket.unlink(missing_ok=True)
 command = [
     str(a.qemu),
     "-M",
-    "diamond3,usb0-hostchar=usbhost",
+    "diamond3,usb0-hostchar=usbhost" + (",ble-hci-test=on" if a.ble_hci_test else ""),
     "-drive",
     f"file={nand},if=none,id=nand,format=raw",
     "-display",
@@ -67,6 +71,9 @@ sensor_socket = nand.with_suffix(".sensor.sock")
 sensor_socket.unlink(missing_ok=True)
 command += ["-chardev", f"socket,id=sensor,path={sensor_socket},server=on,wait=off"]
 for number in range(2, 6):
+    if number == 5:
+        command += ["-serial", "none"]
+        continue
     path = nand.with_suffix(f".uart{number}.sock")
     path.unlink(missing_ok=True)
     command += [

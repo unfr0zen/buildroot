@@ -122,6 +122,14 @@ int main(void) {
         }
     }
     if (failures) return 8;
+    unsigned short normalized_uv[] = {0, 0, 65535, 0, 0, 65535, 65535, 65535};
+    glVertexAttribPointer(1, 2, GL_UNSIGNED_SHORT, GL_TRUE, 0, normalized_uv);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glFinish();
+    glReadPixels(4, 4, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+    printf("Normalized UV: %u %u %u %u; error 0x%x\n", pixel[0], pixel[1],
+           pixel[2], pixel[3], glGetError());
+    if (pixel[0] != 255 || pixel[1] || pixel[2] || pixel[3] != 255) return 12;
     fs = "precision mediump float; varying vec2 texcoord; uniform sampler2D image;"
          "uniform float selectColor; void main(){if(selectColor>0.5)"
          "gl_FragColor=vec4(1.0,0.0,1.0,1.0);"

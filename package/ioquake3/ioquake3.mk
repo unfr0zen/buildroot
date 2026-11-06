@@ -16,6 +16,7 @@ IOQUAKE3_CONF_OPTS = \
 define IOQUAKE3_INSTALL_LAUNCHER
  $(INSTALL) -D -m 0644 $(IOQUAKE3_PKGDIR)/autoexec.cfg $(TARGET_DIR)/usr/lib/ioquake3/demoq3/autoexec.cfg
  $(INSTALL) -D -m 0755 $(IOQUAKE3_PKGDIR)/quake3 $(TARGET_DIR)/usr/bin/quake3
+ $(INSTALL) -D -m 0755 $(IOQUAKE3_PKGDIR)/quake3-demo $(TARGET_DIR)/usr/bin/quake3-demo
 endef
 IOQUAKE3_POST_INSTALL_TARGET_HOOKS += IOQUAKE3_INSTALL_LAUNCHER
 

@@ -17,7 +17,8 @@ make qemu-ui UBOOT='/path/to/u-boot-6.5-14-signed.hab'
 Diamond3 images: `output/images/`. UI: http://127.0.0.1:8075.
 
 Diamond3 includes ioquake3 and the public Quake III Arena demo. Run
-`quake3 +map q3dm1` for a clockwise-rotated KMS/OpenGL ES session.
+`quake3-demo` to follow an automatic bot match, or `quake3 +map q3dm1`
+for a clockwise-rotated KMS/OpenGL ES session.
 
 ```sh
 make j49-firmware NVS=/path/to/stock/wl12xx-nvs.bin

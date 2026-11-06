@@ -35,7 +35,7 @@ if a.fresh or not nand.exists():
     pieces = [
         (0x100000, a.uboot, 0x180000),
         (0x280000, a.uboot, 0x180000),
-        (0x400000, images / "rootfs.ubi", 0x1FC00000),
+        (0x400000, images / "rootfs-qemu.ubi", 0x1FC00000),
     ]
     for _, source, limit in pieces:
         if source.stat().st_size > limit:

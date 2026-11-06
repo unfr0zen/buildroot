@@ -113,3 +113,7 @@ whole udev queue. Diamond3 uses four udev workers; J49 uses one.
 `/etc/default/nest-console`. Login consoles lower console printk verbosity;
 boot messages remain enabled, and subsequent messages remain in `dmesg` and
 the journal. `dmesg -n 7` restores live kernel console messages.
+
+Diamond3 QEMU uses `rootfs-qemu.ubi` and `imx6sx-diamond3-qemu.dtb`,
+which declare the emulated GPU DMA coherent. `rootfs.ubi` contains the
+physical-device DTB with its hardware DMA cache policy.

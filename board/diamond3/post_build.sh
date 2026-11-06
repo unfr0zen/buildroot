@@ -1,12 +1,6 @@
 #!/bin/sh
 set -eu
 "$BR2_EXTERNAL_DIAMOND3_PATH/board/common/post_build.sh" "$1"
-firmware="$BR2_EXTERNAL_DIAMOND3_PATH/.work/firmware/brcm"
-mkdir -p "$1/lib/firmware/brcm"
-for name in brcmfmac43340-sdio.bin brcmfmac43340-sdio.txt; do
- test -f "$firmware/$name" || { echo "Missing private firmware: $firmware/$name" >&2; exit 1; }
- cp "$firmware/$name" "$1/lib/firmware/brcm/$name"
-done
 python3 "$BR2_EXTERNAL_DIAMOND3_PATH/scripts/mkenv.py" "$BINARIES_DIR"
 
 

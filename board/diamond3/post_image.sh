@@ -8,5 +8,6 @@ sed -e "s|BINARIES_DIR|$1|g" \
  -e 's|imx6sx-diamond3.dtb|imx6sx-diamond3-qemu.dtb|g' \
  "$BR2_EXTERNAL_DIAMOND3_PATH/board/diamond3/ubinize.cfg" > "$1/ubinize-qemu.cfg"
 "$HOST_DIR/sbin/ubinize" -o "$1/rootfs-qemu.ubi" -m 2048 -p 131072 -s 2048 "$1/ubinize-qemu.cfg"
+python3 "$BR2_EXTERNAL_DIAMOND3_PATH/scripts/diamond3-nand.py" --images "$1" --uboot "$1/u-boot-sdp-5.2d43-nand.bin" --output "$1/diamond3-buildroot.bin"
 cd "$1"
-sha256sum u-boot-sdp-5.2d43.hab u-boot-sdp-5.2d43-nand.bin uInitrd uImage imx6sx-diamond3.dtb rootfs.ubifs rootfs.ubi imx6sx-diamond3-qemu.dtb rootfs-qemu.ubi > SHA256SUMS
+sha256sum u-boot-sdp-5.2d43.hab u-boot-sdp-5.2d43-nand.bin uInitrd uImage imx6sx-diamond3.dtb rootfs.ubifs rootfs.ubi imx6sx-diamond3-qemu.dtb rootfs-qemu.ubi diamond3-buildroot.bin > SHA256SUMS

@@ -3,6 +3,7 @@
 
 import argparse
 import j49_ecc as ecc
+from image_report import validate_components, begin_image, finish_image
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
@@ -31,7 +32,21 @@ ecc.bch4_parity = parity
 images = a.images
 kernel = (images / "uImage").read_bytes()
 ubi = (images / "rootfs.ubi").read_bytes()
-assert len(kernel) <= 0x800000 and len(ubi) <= 0xF400000
+mlo = (images / "MLO").read_bytes()
+uboot = (images / "u-boot-j49.img").read_bytes()
+components = [
+    ("x-loader-1", 0, len(mlo), 0x20000),
+    ("x-loader-2", 0x20000, len(mlo), 0x20000),
+    ("u-boot-1", 0x40000, len(uboot), 0x180000),
+    ("u-boot-2", 0x1C0000, len(uboot), 0x180000),
+    ("env0", 0x340000, ecc.ENV_SIZE, 0x60000),
+    ("env1", 0x3A0000, ecc.ENV_SIZE, 0x60000),
+    ("kernel", 0x400000, len(kernel), 0x800000),
+    ("ubi", 0xC00000, len(ubi), 0xF400000),
+]
+validate_components(components)
+print(f"  rootfs: {(images / 'rootfs.ubifs').stat().st_size} bytes [dynamic UBI volume mapping]")
+begin_image(components)
 a.output.parent.mkdir(parents=True, exist_ok=True)
 with a.output.open("wb") as target:
     remaining = 0x10000000 // 2048 * 2112
@@ -40,9 +55,6 @@ with a.output.open("wb") as target:
         target.write(b"\xff" * count)
         remaining -= count
 with a.output.open("r+b") as target:
-    mlo = (images / "MLO").read_bytes()
-    uboot = (images / "u-boot-j49.img").read_bytes()
-    assert len(mlo) <= 0x20000 and len(uboot) <= 0x180000
     for offset in [0, 0x20000]:
         ecc.write_data(target, offset, mlo.ljust((len(mlo) + 2047) // 2048 * 2048, b"\xff"))
     for offset in [0x40000, 0x1C0000]:
@@ -70,4 +82,4 @@ with a.output.open("r+b") as target:
             oob[36 + sector * 7 : 43 + sector * 7] = raw.to_bytes(7, "big")
         target.seek((0xC00000 + offset) // 2048 * 2112)
         target.write(data + oob)
-print(a.output)
+finish_image(a.output, 0x10000000)

@@ -1,6 +1,7 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")/.."
+started=$(date +%s)
 board=diamond3
 if [ "${1:-}" = --board ]; then board=$2; shift 2; fi
 case "$board" in diamond3|j49) ;; *) echo "Unknown board: $board" >&2; exit 1;; esac
@@ -13,11 +14,13 @@ if [ "$board" = j49 ]; then
   docker run --rm -v "$PWD:/src" -v diamond3-systemd-output:/src/output diamond3-buildroot make diamond3-defconfig toolchain
  fi
  docker volume create j49-systemd-output >/dev/null
- docker run --rm -v "$PWD:/src" -v diamond3-systemd-output:/src/output -v j49-systemd-output:/src/output/j49 diamond3-buildroot make BOARD=j49 "$@"
+ docker run --rm -v "$PWD:/src" -v diamond3-systemd-output:/src/output -v j49-systemd-output:/src/output/j49 diamond3-buildroot make BOARD=j49 BUILD_SUMMARY=0 "$@"
  mkdir -p output/j49/images
  docker run --rm -v "$PWD:/export" -v j49-systemd-output:/build diamond3-buildroot sh -c 'cp -a /build/images/. /export/output/j49/images/'
+ python3 scripts/build-summary.py --board j49 --images output/j49/images --started "$started" --copied
  exit 0
 fi
-docker run --rm -v "$PWD:/src" -v diamond3-systemd-output:/src/output diamond3-buildroot make "$@"
+docker run --rm -v "$PWD:/src" -v diamond3-systemd-output:/src/output diamond3-buildroot make BUILD_SUMMARY=0 "$@"
 mkdir -p output/images
 docker run --rm -v "$PWD:/export" -v diamond3-systemd-output:/build diamond3-buildroot sh -c 'cp -a /build/images/. /export/output/images/'
+python3 scripts/build-summary.py --board diamond3 --images output/images --started "$started" --copied

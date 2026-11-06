@@ -1,0 +1,79 @@
+/dts-v1/;
+#include "nxp/imx/imx6sx.dtsi"
+/ {
+ model = "Diamond3 homebrew";
+ compatible = "nestlabs,diamond3-dvt", "fsl,imx6sx";
+ memory@80000000 { device_type = "memory"; reg = <0x80000000 0x20000000>; };
+ chosen { stdout-path = &uart1; };
+};
+&uart1 { status = "okay"; };
+&gpmi { status = "okay"; nand-on-flash-bbt; };
+&usbotg1 { dr_mode = "peripheral"; status = "okay"; };
+
+&iomuxc {
+ pin_uart1: uart1-grp { fsl,pins = <0x94 0x3dc 0x830 0x03 0x02 0x1b0b1 0x98 0x3e0 0x00 0x03 0x00 0x1b0b1>; };
+ pin_sdio: sdio-grp { fsl,pins = <0x23c 0x584 0x00 0x00 0x00 0x17059 0x238 0x580 0x00 0x00 0x00 0x10059 0x240 0x588 0x00 0x00 0x00 0x17059 0x244 0x58c 0x00 0x00 0x00 0x17059 0x248 0x590 0x00 0x00 0x00 0x17059 0x24c 0x594 0x00 0x00 0x00 0x17059>; };
+ pin_i2c2: i2c2-grp { fsl,pins = <0x20 0x368 0x7b4 0x00 0x01 0x4001b8b1 0x1c 0x364 0x7b0 0x00 0x01 0x4001b8b1>; };
+ pin_i2c4: i2c4-grp { fsl,pins = <0x2a4 0x5ec 0x7c4 0x03 0x01 0x4001b8b1 0x2a8 0x5f0 0x7c0 0x03 0x01 0x4001b8b1>; };
+ pin_lcddata: lcddata-grp { fsl,pins = <0xd0 0x418 0x00 0x00 0x00 0x4001b0b0 0xd4 0x41c 0x00 0x00 0x00 0x4001b0b0 0xd8 0x420 0x00 0x00 0x00 0x4001b0b0 0xdc 0x424 0x00 0x00 0x00 0x4001b0b0 0xe0 0x428 0x00 0x00 0x00 0x4001b0b0 0xe4 0x42c 0x00 0x00 0x00 0x4001b0b0 0xe8 0x430 0x00 0x00 0x00 0x4001b0b0 0xec 0x434 0x00 0x00 0x00 0x4001b0b0 0xf0 0x438 0x00 0x00 0x00 0x4001b0b0 0xf4 0x43c 0x00 0x00 0x00 0x4001b0b0 0xf8 0x440 0x00 0x00 0x00 0x4001b0b0 0xfc 0x444 0x00 0x00 0x00 0x4001b0b0 0x100 0x448 0x00 0x00 0x00 0x4001b0b0 0x104 0x44c 0x00 0x00 0x00 0x4001b0b0 0x108 0x450 0x00 0x00 0x00 0x4001b0b0 0x10c 0x454 0x00 0x00 0x00 0x4001b0b0 0x110 0x458 0x00 0x00 0x00 0x4001b0b0 0x114 0x45c 0x00 0x00 0x00 0x4001b0b0 0x118 0x460 0x00 0x00 0x00 0x4001b0b0 0x11c 0x464 0x00 0x00 0x00 0x4001b0b0 0x120 0x468 0x00 0x00 0x00 0x4001b0b0 0x124 0x46c 0x00 0x00 0x00 0x4001b0b0 0x128 0x470 0x00 0x00 0x00 0x4001b0b0 0x12c 0x474 0x00 0x00 0x00 0x4001b0b0>; };
+ pin_lcdctrl: lcdctrl-grp { fsl,pins = <0xcc 0x414 0x00 0x00 0x00 0x4001b0b0 0x130 0x478 0x00 0x00 0x00 0x4001b0b0 0x13c 0x484 0x00 0x00 0x00 0x4001b0b0 0x134 0x47c 0x7e0 0x00 0x00 0x4001b0b0 0x138 0x480 0x00 0x05 0x00 0x1b0b0>; };
+};
+
+&uart1 { pinctrl-names = "default"; pinctrl-0 = <&pin_uart1>; };
+/ {
+ keys { compatible = "gpio-keys";
+  front { label = "Front button"; gpios = <&gpio2 18 0>; linux,code = <28>; };
+ };
+ wifi_pwrseq: wifi-pwrseq { compatible = "mmc-pwrseq-simple"; reset-gpios = <&gpio1 4 1>; post-power-on-delay-ms = <200>; };
+ vref: regulator-vref { compatible = "regulator-fixed"; regulator-name = "adc-vref"; regulator-min-microvolt = <3300000>; regulator-max-microvolt = <3300000>; regulator-always-on; };
+ panel { compatible = "nestlabs,diamond3-panel";
+  nestlabs,panel-variant = <0>;
+  clock-gpios = <&gpio4 21 0>; mosi-gpios = <&gpio4 16 0>;
+  miso-gpios = <&gpio4 17 0>; cs-gpios = <&gpio4 22 0>;
+  reset-gpios = <&gpio3 27 0>;
+  pinctrl-names = "default"; pinctrl-0 = <&pin_panel>;
+  width-mm = <32>; height-mm = <43>;
+  panel-timing { clock-frequency = <19700016>; hactive = <480>; vactive = <640>; hback-porch = <6>; hfront-porch = <6>; vback-porch = <6>; vfront-porch = <6>; hsync-len = <10>; vsync-len = <2>; hsync-active = <0>; vsync-active = <0>; de-active = <1>; pixelclk-active = <1>; };
+  port { panel_in: endpoint { remote-endpoint = <&lcdif1_to_ldb>; }; };
+ };
+};
+&usdhc2 { pinctrl-names = "default"; pinctrl-0 = <&pin_sdio>; bus-width = <4>; non-removable; mmc-pwrseq = <&wifi_pwrseq>; status = "okay";
+ #address-cells = <1>; #size-cells = <0>;
+ wifi@1 { reg = <1>; compatible = "brcm,bcm4329-fmac"; interrupt-parent = <&gpio5>; interrupts = <15 4>; interrupt-names = "host-wake"; };
+};
+&adc1 { vref-supply = <&vref>; status = "okay"; };
+&gpio7 { hall-enable { gpio-hog; gpios = <2 0>; output-low; line-name = "hall-enable"; }; };
+&i2c2 { pinctrl-names = "default"; pinctrl-0 = <&pin_i2c2>; clock-frequency = <100000>; status = "okay"; };
+&i2c4 { pinctrl-names = "default"; pinctrl-0 = <&pin_i2c4>; clock-frequency = <100000>; status = "okay";
+ pmic@8 { compatible = "fsl,pfuze200"; reg = <8>; };
+};
+&lcdif1 { pinctrl-names = "default"; pinctrl-0 = <&pin_lcddata &pin_lcdctrl>; status = "okay"; };
+&lcdif1_to_ldb { remote-endpoint = <&panel_in>; };
+&gpmi {
+ fsl,legacy-bch-geometry;
+ partitions { compatible = "fixed-partitions"; #address-cells = <1>; #size-cells = <1>;
+  partition@0 { label = "u-boot"; reg = <0 0x400000>; read-only; };
+  partition@400000 { label = "ubipart"; reg = <0x400000 0x1fc00000>; };
+ };
+};
+
+&iomuxc {
+ pin_panel: panel-grp { fsl,pins = <
+  MX6SX_PAD_QSPI1A_SCLK__GPIO4_IO_21 0x100b1
+  MX6SX_PAD_QSPI1A_DATA0__GPIO4_IO_16 0x100b1
+  MX6SX_PAD_QSPI1A_DATA1__GPIO4_IO_17 0x100b1
+  MX6SX_PAD_QSPI1A_SS0_B__GPIO4_IO_22 0x100b1
+ >; };
+};
+&gpio2 { backlight-enable { gpio-hog; gpios = <14 0>; output-high; line-name = "backlight-enable"; }; };
+&iomuxc {
+ pinctrl-names = "default";
+ pinctrl-0 = <&pin_board>;
+ pin_board: board-grp { fsl,pins = <
+  MX6SX_PAD_KEY_COL4__GPIO2_IO_14 0x1b0b0
+  MX6SX_PAD_KEY_ROW3__GPIO2_IO_18 0x1b0b0
+  MX6SX_PAD_GPIO1_IO04__GPIO1_IO_4 0x1b0b0
+  MX6SX_PAD_SD3_DATA0__GPIO7_IO_2 0x1b0b0
+ >; };
+};
+&wdog1 { status = "okay"; };

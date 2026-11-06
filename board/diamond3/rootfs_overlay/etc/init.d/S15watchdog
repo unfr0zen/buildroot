@@ -1,0 +1,4 @@
+#!/bin/sh
+[ "$1" = start ] || exit 0
+[ -c /dev/watchdog ] || exit 1
+watchdog -t 5 -T 60 /dev/watchdog

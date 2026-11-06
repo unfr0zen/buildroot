@@ -1,0 +1,13 @@
+[Unit]
+Description=USB Ethernet DHCP server
+After=nest-usb.service
+Requires=nest-usb.service
+[Service]
+ExecStartPre=/sbin/ip address replace 192.168.77.1/24 dev usb0
+ExecStartPre=/sbin/ip link set usb0 up
+ExecStartPre=/usr/bin/touch /run/usb-udhcpd.leases
+ExecStart=/sbin/udhcpd -f /etc/usb-udhcpd.conf
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

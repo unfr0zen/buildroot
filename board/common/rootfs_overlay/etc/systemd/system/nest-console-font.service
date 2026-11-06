@@ -1,0 +1,10 @@
+[Unit]
+Description=Thermostat framebuffer console font
+Requires=dev-fb0.device
+After=dev-fb0.device
+Before=getty@tty1.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/nest-console-font start
+RemainAfterExit=yes

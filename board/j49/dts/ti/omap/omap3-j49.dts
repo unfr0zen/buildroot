@@ -97,7 +97,7 @@
 };
 
 &omap3_pmx_core {
- pinctrl-names = "default"; pinctrl-0 = <&j49_pins>;
+ pinctrl-names = "default"; pinctrl-0 = <&j49_pins &j49_io_pins>;
  j49_pins: j49-pins { pinctrl-single,pins = <
   OMAP3_CORE1_IOPAD(0x20d4, PIN_INPUT_PULLDOWN | MUX_MODE0) /* dss_pclk */
   OMAP3_CORE1_IOPAD(0x20d6, PIN_INPUT_PULLDOWN | MUX_MODE0) /* dss_hsync */
@@ -160,3 +160,64 @@
 
 &usb_otg_hs { interface-type = <0>; usb-phy = <&usb2_phy>; phys = <&usb2_phy>; phy-names = "usb2-phy"; power = <50>; };
 &twl_keypad { status = "disabled"; };
+
+&twl_madc { vusb3v1-supply = <&vusb3v1>; };
+&charger { status = "disabled"; };
+/ {
+ battery {
+  compatible = "nestlabs,adc-battery";
+  io-channels = <&twl_madc 0>; io-channel-names = "voltage";
+  divider-r1-ohm = <2>; divider-r2-ohm = <1>;
+ };
+ twl4030_madc_hwmon { compatible = "nestlabs,j49-madc-hwmon";
+  io-channels = <&twl_madc 0>, <&twl_madc 1>, <&twl_madc 2>, <&twl_madc 3>,
+                <&twl_madc 4>, <&twl_madc 5>, <&twl_madc 6>, <&twl_madc 7>,
+                <&twl_madc 8>, <&twl_madc 9>, <&twl_madc 10>, <&twl_madc 11>,
+                <&twl_madc 12>, <&twl_madc 13>, <&twl_madc 14>, <&twl_madc 15>;
+ };
+};
+
+&uart2 { status = "okay"; };
+&uart3 { status = "okay"; };
+&mcspi2 {
+ status = "okay";
+ radio@0 { compatible = "nestlabs,em357"; reg = <0>; spi-max-frequency = <20000000>; };
+};
+/ {
+ aliases { serial-sensormcu0 = &uart3; };
+ diamond-backplate {
+  compatible = "nestlabs,gpio-exporter";
+  input-names = "detect#"; input-gpios = <&gpio3 1 GPIO_ACTIVE_LOW>;
+  output-names = "reset"; output-gpios = <&gpio4 8 GPIO_ACTIVE_HIGH>;
+ };
+ diamond-zigbee {
+  compatible = "nestlabs,gpio-exporter";
+  input-names = "interrupt"; input-gpios = <&gpio6 22 GPIO_ACTIVE_LOW>;
+  output-names = "reset#"; output-gpios = <&gpio2 29 GPIO_ACTIVE_LOW>;
+ };
+ board-inputs {
+  compatible = "nestlabs,gpio-exporter";
+  input-names = "lcd-id", "wheel-motion#";
+  input-gpios = <&gpio4 9 GPIO_ACTIVE_HIGH>, <&gpio4 12 GPIO_ACTIVE_LOW>;
+ };
+ diamond-battery {
+  compatible = "nestlabs,gpio-exporter";
+  output-names = "disconnect"; output-gpios = <&gpio6 1 GPIO_ACTIVE_HIGH>;
+ };
+};
+&omap3_pmx_core {
+ j49_io_pins: j49-io-pins { pinctrl-single,pins = <
+  OMAP3_CORE1_IOPAD(0x219e, PIN_INPUT | MUX_MODE0) /* uart3_rx */
+  OMAP3_CORE1_IOPAD(0x21a0, PIN_OUTPUT | MUX_MODE0) /* uart3_tx */
+  OMAP3_CORE1_IOPAD(0x21d6, PIN_INPUT | MUX_MODE0) /* mcspi2_clk */
+  OMAP3_CORE1_IOPAD(0x21d8, PIN_OUTPUT | MUX_MODE0) /* mcspi2_simo */
+  OMAP3_CORE1_IOPAD(0x21da, PIN_INPUT | MUX_MODE0) /* mcspi2_somi */
+  OMAP3_CORE1_IOPAD(0x21dc, PIN_OUTPUT | MUX_MODE0) /* mcspi2_cs0 */
+  OMAP3_CORE1_IOPAD(0x21de, PIN_INPUT | MUX_MODE4) /* gpio182 radio_irq */
+  OMAP3_CORE1_IOPAD(0x20c8, PIN_OUTPUT | MUX_MODE4) /* gpio61 radio_reset */
+  OMAP3_CORE1_IOPAD(0x20d2, PIN_INPUT_PULLUP | MUX_MODE4) /* gpio65 backplate_detect */
+  OMAP3_CORE1_IOPAD(0x2120, PIN_OUTPUT | MUX_MODE4) /* gpio104 backplate_reset */
+  OMAP3_CORE1_IOPAD(0x2122, PIN_INPUT_PULLUP | MUX_MODE4) /* gpio105 lcd_id */
+  OMAP3_CORE1_IOPAD(0x2196, PIN_OUTPUT | MUX_MODE4) /* gpio161 battery_disconnect */
+ >; };
+};

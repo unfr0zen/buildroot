@@ -58,6 +58,29 @@ command = [
     "-chardev",
     f"socket,id=usbhost,path={usb_socket},server=on,wait=off",
 ]
+sensor_socket = nand.with_suffix(".sensor.sock")
+sensor_socket.unlink(missing_ok=True)
+aux_socket = nand.with_suffix(".uart2.sock")
+aux_socket.unlink(missing_ok=True)
+command += [
+    "-chardev",
+    f"socket,id=sensor,path={sensor_socket},server=on,wait=off",
+    "-chardev",
+    f"socket,id=aux,path={aux_socket},server=on,wait=off",
+]
+backplate_command = [
+    sys.executable,
+    str(root.parent / "qemu/ui/backplate.py"),
+    "--serial",
+    str(sensor_socket),
+    "--board",
+    "j49",
+    "--parent",
+    str(os.getpid()),
+]
+backplate_control = f"tcp:127.0.0.1:{a.port + 20}"
+if a.ui:
+    backplate_command += ["--control", backplate_control]
 ui = None
 if a.ui:
     work = nand.parent / (nand.stem + "-ui")
@@ -71,9 +94,9 @@ if a.ui:
         "-serial",
         "chardev:con",
         "-serial",
-        "null",
+        "chardev:aux",
         "-serial",
-        "null",
+        "chardev:sensor",
         "-chardev",
         f"socket,id=con,path={console},server=on,wait=off",
         "-chardev",
@@ -84,13 +107,21 @@ if a.ui:
         f"unix:{qmp},server=on,wait=off",
     ]
 else:
-    command += ["-serial", "stdio"]
+    command += [
+        "-serial",
+        "stdio",
+        "-serial",
+        "chardev:aux",
+        "-serial",
+        "chardev:sensor",
+    ]
 child = subprocess.Popen(
     command,
     stdin=subprocess.PIPE if a.smoke else None,
     stdout=subprocess.PIPE if a.smoke else None,
     stderr=subprocess.STDOUT if a.smoke else None,
 )
+backplate = subprocess.Popen(backplate_command)
 if a.ui:
     ui = subprocess.Popen(
         [
@@ -108,6 +139,8 @@ if a.ui:
             str(a.port),
             "--name",
             "J49 Buildroot",
+            "--backplate",
+            backplate_control,
             "--echo-console",
             "--parent",
             str(os.getpid()),
@@ -154,6 +187,8 @@ try:
     else:
         child.wait()
 finally:
+    backplate.terminate()
+    backplate.wait()
     if child.poll() is None:
         child.terminate()
     if ui:

@@ -12,6 +12,9 @@ parser.add_argument(
 )
 parser.add_argument("--speed", choices=["hs", "fs"], default="hs")
 parser.add_argument("--ui", help="UI URL for testing the cable switch")
+parser.add_argument(
+    "--discovery-hostname", help="Also check NetBIOS and mDNS hostname replies"
+)
 args = parser.parse_args()
 s = socket.socket(socket.AF_UNIX)
 s.connect(args.socket)
@@ -286,11 +289,54 @@ for _ in range(30):
     if frame[12:14] == b"\x08\x00" and frame[23] == 1:
         packet = frame[14 + (frame[14] & 15) * 4 :]
         if packet[0] == 0 and packet[4:8] == icmp[4:8]:
-            assert packet[8:] == payload and checksum(packet) == 0
+            assert packet[8:] == payload and checksum(packet) == 0, (
+                len(frame),
+                len(packet),
+                frame[16:18].hex(),
+                packet[:32].hex(),
+                packet[-32:].hex(),
+            )
             break
 else:
     raise AssertionError("no ICMP echo reply")
 print("1024-byte ICMP payload round-trip OK")
+
+if args.discovery_hostname:
+
+    def udp_query(port, payload):
+        udp = struct.pack("!HHHH", 49152, port, len(payload) + 8, 0) + payload
+        ip = struct.pack(
+            "!BBHHHBBH4s4s", 0x45, 0, len(udp) + 20, 3, 0, 64, 17, 0, host_ip, device_ip
+        )
+        ip = ip[:10] + struct.pack("!H", checksum(ip)) + ip[12:]
+        write(eout, device_mac + mac + b"\x08\x00" + ip + udp)
+        for _ in range(30):
+            frame = read_frame(ein)
+            if len(frame) < 42 or frame[12:14] != b"\x08\x00" or frame[23] != 17:
+                continue
+            offset = 14 + (frame[14] & 15) * 4
+            source, destination = struct.unpack("!HH", frame[offset : offset + 4])
+            data = frame[offset + 8 :]
+            if source == port and destination == 49152 and data[:2] == payload[:2]:
+                return data
+        raise AssertionError(f"No hostname response on UDP {port}")
+
+    name = args.discovery_hostname.upper().encode().ljust(15, b" ") + b"\0"
+    encoded = bytes(v for n in name for v in (65 + (n >> 4), 65 + (n & 15)))
+    query = struct.pack("!HHHHHH", 0x4E42, 0x110, 1, 0, 0, 0)
+    query += b"\x20" + encoded + b"\0" + struct.pack("!HH", 32, 1)
+    response = udp_query(137, query)
+    assert response[6:8] == b"\0\x01" and response[-4:] == device_ip, response.hex()
+    labels = args.discovery_hostname + ".local"
+    dns_name = (
+        b"".join(bytes([len(part)]) + part.encode() for part in labels.split("."))
+        + b"\0"
+    )
+    query = struct.pack("!HHHHHH", 0x4D44, 0, 1, 0, 0, 0)
+    query += dns_name + struct.pack("!HH", 1, 1)
+    response = udp_query(5353, query)
+    assert response[2] & 0x80 and device_ip in response, response.hex()
+    print("NetBIOS and mDNS hostname resolution OK")
 cmd("RESET")
 line(b"RESETDONE")
 assert len(control(128, 6, 0x100, length=18)) == 18
@@ -316,11 +362,15 @@ if args.ui:
     state = cable(False)
     assert not state["vbus"]
     line(b"DISCONNECT")
+    time.sleep(0.1)
     state = cable(True)
     assert state["vbus"]
     line(b"CONNECT")
+    # USB hosts debounce attachment before reset and allow reset recovery.
+    time.sleep(0.1)
     cmd("RESET")
     line(b"RESETDONE")
+    time.sleep(0.02)
     assert len(control(128, 6, 0x100, length=18)) == 18
     print("cable reconnect OK")
 s.close()

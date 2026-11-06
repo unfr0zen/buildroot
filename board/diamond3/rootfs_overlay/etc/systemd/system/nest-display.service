@@ -1,0 +1,12 @@
+[Unit]
+Description=LCD panel and backlight
+After=systemd-udev-trigger.service
+Before=getty@tty1.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/nest-display start
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

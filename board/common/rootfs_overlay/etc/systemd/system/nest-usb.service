@@ -1,0 +1,12 @@
+[Unit]
+Description=USB ACM and ECM gadget
+After=systemd-udev-trigger.service local-fs.target sys-kernel-config.mount
+Requires=sys-kernel-config.mount
+[Service]
+Type=oneshot
+ExecStartPre=/usr/bin/udevadm settle --timeout=60
+ExecStart=/usr/libexec/nest-usb start
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

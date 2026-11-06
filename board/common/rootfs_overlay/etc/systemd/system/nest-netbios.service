@@ -1,0 +1,10 @@
+[Unit]
+Description=NetBIOS hostname service
+After=network.target nest-usb-dhcp.service
+
+[Service]
+ExecStart=/usr/sbin/nbnsd
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,37 @@
+Subject: [PATCH] nbnsd: validate query bounds and refresh packet metadata
+
+--- a/nbnsd.c
++++ b/nbnsd.c
+@@ -294,6 +294,8 @@
+ 
+     while (1) {
+         from_len = sizeof(from);
++        mh.msg_controllen = sizeof(cmbuf);
++        mh.msg_namelen = sizeof(peeraddr);
+         len = recvmsg(sd, &mh, MSG_WAITALL);
+         if (len == -1) {
+             printf("error receiving: %s\n", strerror(errno));
+@@ -306,6 +308,14 @@
+         }
+         //len = recvfrom(sd, pkt, sizeof(pkt), MSG_WAITALL,
+         //        (struct sockaddr *) &from, &from_len);
++        /* Accept one complete, unscoped, first-level encoded name. */
++        if (len < sizeof(struct nb_header) + 38 || pkt[12] != 32 || pkt[45])
++            continue;
++        for (ret = 13; ret < 45; ret++)
++            if (pkt[ret] < 'A' || pkt[ret] > 'P')
++                break;
++        if (ret != 45)
++            continue;
+         hdr = (struct nb_header *) pkt;
+         tid = get16(hdr->name_trn_id);
+         flags = get16(hdr->flags);
+@@ -418,7 +428,7 @@
+             continue;
+         }
+ 
+-        *((in_addr_t*)(data+12)) = receive_addr;
++        memcpy(data + 12, &receive_addr, sizeof(receive_addr));
+         if (verbose)
+             printf("%s: responding with IP address %s\n",
+                     prog_name, inet_ntoa(*(struct in_addr *) (data + 12)));

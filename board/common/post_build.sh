@@ -1,6 +1,15 @@
 #!/bin/sh
 set -eu
 sed -i '/^root:/s@:[^:]*$@:/bin/bash@' "$1/etc/passwd"
-sed -i '/^ttyGS0::/d; /^tty1::/d' "$1/etc/inittab"
-echo 'ttyGS0::respawn:/sbin/getty -L -n -l /usr/sbin/console-shell ttyGS0 115200 xterm-256color' >> "$1/etc/inittab"
-echo 'tty1::respawn:/sbin/getty -L tty1 0 linux' >> "$1/etc/inittab"
+[ ! -L "$1/etc/dropbear" ] || rm -f "$1/etc/dropbear"
+mkdir -p "$1/etc/dropbear" "$1/etc/systemd/system/multi-user.target.wants"
+# Host keys and machine identity belong to the device's first boot.
+rm -f "$1/etc/dropbear/"*host_key "$1/etc/machine-id"
+touch "$1/etc/machine-id"
+for unit in nest-hardware nest-usb nest-usb-dhcp nest-wheel nest-backplate nest-ssh-keys; do
+ ln -sf "../$unit.service" "$1/etc/systemd/system/multi-user.target.wants/$unit.service"
+done
+mkdir -p "$1/etc/systemd/system/getty.target.wants"
+ln -sf ../nest-usb-shell.service "$1/etc/systemd/system/getty.target.wants/nest-usb-shell.service"
+ln -sf /usr/lib/systemd/system/getty@.service "$1/etc/systemd/system/getty.target.wants/getty@tty1.service"
+rm -f "$1/etc/avahi/services/sftp-ssh.service"

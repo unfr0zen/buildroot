@@ -26,16 +26,7 @@
  };
  wifi_pwrseq: wifi-pwrseq { compatible = "mmc-pwrseq-simple"; reset-gpios = <&gpio1 4 1>; post-power-on-delay-ms = <200>; };
  vref: regulator-vref { compatible = "regulator-fixed"; regulator-name = "adc-vref"; regulator-min-microvolt = <3300000>; regulator-max-microvolt = <3300000>; regulator-always-on; };
- panel { compatible = "nestlabs,diamond3-panel";
-  nestlabs,panel-variant = <0>;
-  clock-gpios = <&gpio4 21 0>; mosi-gpios = <&gpio4 16 0>;
-  miso-gpios = <&gpio4 17 0>; cs-gpios = <&gpio4 22 0>;
-  reset-gpios = <&gpio3 27 0>;
-  pinctrl-names = "default"; pinctrl-0 = <&pin_panel>;
-  width-mm = <32>; height-mm = <43>;
-  panel-timing { clock-frequency = <19700016>; hactive = <480>; vactive = <640>; hback-porch = <6>; hfront-porch = <6>; vback-porch = <6>; vfront-porch = <6>; hsync-len = <10>; vsync-len = <2>; hsync-active = <0>; vsync-active = <0>; de-active = <1>; pixelclk-active = <1>; };
-  port { panel_in: endpoint { remote-endpoint = <&lcdif1_to_ldb>; }; };
- };
+
 };
 &usdhc2 { pinctrl-names = "default"; pinctrl-0 = <&pin_sdio>; bus-width = <4>; non-removable; mmc-pwrseq = <&wifi_pwrseq>; status = "okay";
  #address-cells = <1>; #size-cells = <0>;
@@ -45,7 +36,27 @@
 &gpio7 { hall-enable { gpio-hog; gpios = <2 0>; output-low; line-name = "hall-enable"; }; };
 &i2c2 { pinctrl-names = "default"; pinctrl-0 = <&pin_i2c2>; clock-frequency = <100000>; status = "okay"; };
 &i2c4 { pinctrl-names = "default"; pinctrl-0 = <&pin_i2c4>; clock-frequency = <100000>; status = "okay";
- pmic@8 { compatible = "fsl,pfuze200"; reg = <8>; };
+ pmic@8 { compatible = "fsl,pfuze200"; reg = <8>;
+  regulators {
+   sw1ab { regulator-min-microvolt = <975000>; regulator-max-microvolt = <1350000>;
+    regulator-boot-on; regulator-always-on; regulator-ramp-delay = <6250>; };
+   sw2 { regulator-min-microvolt = <975000>; regulator-max-microvolt = <1350000>;
+    regulator-boot-on; regulator-always-on; regulator-ramp-delay = <6250>; };
+   sw3a { regulator-min-microvolt = <1200000>; regulator-max-microvolt = <1200000>;
+    regulator-boot-on; regulator-always-on; };
+   sw3b { regulator-min-microvolt = <1800000>; regulator-max-microvolt = <1800000>;
+    regulator-boot-on; regulator-always-on; };
+   vsnvs { regulator-min-microvolt = <3000000>; regulator-max-microvolt = <3000000>;
+    regulator-boot-on; regulator-always-on; };
+   vrefddr { regulator-boot-on; regulator-always-on; };
+   vgen4 { regulator-min-microvolt = <2800000>; regulator-max-microvolt = <2800000>;
+    regulator-always-on; };
+   vgen5 { regulator-min-microvolt = <3300000>; regulator-max-microvolt = <3300000>;
+    regulator-always-on; };
+   vgen6 { regulator-min-microvolt = <3000000>; regulator-max-microvolt = <3000000>;
+    regulator-always-on; };
+  };
+ };
 };
 &lcdif1 { pinctrl-names = "default"; pinctrl-0 = <&pin_lcddata &pin_lcdctrl>; status = "okay"; };
 &lcdif1_to_ldb { remote-endpoint = <&panel_in>; };
@@ -59,9 +70,9 @@
 
 &iomuxc {
  pin_panel: panel-grp { fsl,pins = <
-  MX6SX_PAD_QSPI1A_SCLK__GPIO4_IO_21 0x100b1
-  MX6SX_PAD_QSPI1A_DATA0__GPIO4_IO_16 0x100b1
-  MX6SX_PAD_QSPI1A_DATA1__GPIO4_IO_17 0x100b1
+  MX6SX_PAD_QSPI1A_SCLK__ECSPI1_SCLK 0x100b1
+  MX6SX_PAD_QSPI1A_DATA0__ECSPI1_MOSI 0x100b1
+  MX6SX_PAD_QSPI1A_DATA1__ECSPI1_MISO 0x100b1
   MX6SX_PAD_QSPI1A_SS0_B__GPIO4_IO_22 0x100b1
  >; };
 };
@@ -97,3 +108,111 @@
  pin_piezo_enable: piezo-enable-grp { fsl,pins = <MX6SX_PAD_GPIO1_IO05__GPIO1_IO_5 0x110b0>; };
  pin_piezo_pwm: piezo-pwm-grp { fsl,pins = <MX6SX_PAD_GPIO1_IO10__PWM1_OUT 0x110b0>; };
 };
+
+&adc2 { vref-supply = <&vref>; status = "okay"; };
+/ {
+ battery {
+  compatible = "nestlabs,adc-battery";
+  io-channels = <&adc2 0>; io-channel-names = "voltage";
+  divider-r1-ohm = <100000>; divider-r2-ohm = <301000>;
+  enable-gpios = <&gpio6 16 GPIO_ACTIVE_HIGH>; delay-us = <100>;
+  pinctrl-names = "default"; pinctrl-0 = <&pin_battery_adc>;
+ };
+ adc-monitor { compatible = "iio-hwmon";
+  io-channels = <&adc1 0>, <&adc1 1>, <&adc1 2>, <&adc1 3>,
+                <&adc2 0>, <&adc2 1>, <&adc2 2>, <&adc2 3>;
+ };
+};
+&iomuxc {
+ pin_battery_adc: battery-adc-grp { fsl,pins = <MX6SX_PAD_SD4_DATA2__GPIO6_IO_16 0x1b0b0>; };
+};
+
+&ecspi1 {
+ status = "okay"; pinctrl-names = "default"; pinctrl-0 = <&pin_panel>;
+ cs-gpios = <&gpio4 22 GPIO_ACTIVE_LOW>;
+ /delete-property/ dmas; /delete-property/ dma-names;
+ panel@0 { reg = <0>; spi-max-frequency = <2000000>; spi-cpol; spi-cpha; compatible = "nestlabs,diamond3-panel";
+  nestlabs,panel-variant = <0>;
+  reset-gpios = <&gpio3 27 0>;
+  width-mm = <32>; height-mm = <43>;
+  panel-timing { clock-frequency = <19700016>; hactive = <480>; vactive = <640>; hback-porch = <6>; hfront-porch = <6>; vback-porch = <6>; vfront-porch = <6>; hsync-len = <10>; vsync-len = <2>; hsync-active = <0>; vsync-active = <0>; de-active = <1>; pixelclk-active = <1>; };
+  port { panel_in: endpoint { remote-endpoint = <&lcdif1_to_ldb>; }; };
+ };
+};
+
+&uart2 {
+ status = "okay"; pinctrl-names = "default"; pinctrl-0 = <&pin_uart2>;
+ /delete-property/ dmas; /delete-property/ dma-names;
+};
+&uart5 {
+ status = "okay"; pinctrl-names = "default"; pinctrl-0 = <&pin_uart5>; uart-has-rtscts;
+ /delete-property/ dmas; /delete-property/ dma-names;
+};
+&uart6 {
+ status = "okay"; pinctrl-names = "default"; pinctrl-0 = <&pin_uart6>;
+ /delete-property/ dmas; /delete-property/ dma-names;
+};
+&ecspi3 {
+ status = "okay"; pinctrl-names = "default"; pinctrl-0 = <&pin_ecspi3>;
+ cs-gpios = <&gpio4 30 GPIO_ACTIVE_LOW>;
+ /delete-property/ dmas; /delete-property/ dma-names;
+ radio@0 { compatible = "nestlabs,em357"; reg = <0>; spi-max-frequency = <20000000>; };
+};
+/ {
+ aliases { serial-sensormcu0 = &uart6; serial-ble0 = &uart5; };
+ em35x-gpios {
+  compatible = "nestlabs,gpio-exporter";
+  output-names = "reset", "wake";
+  output-gpios = <&gpio2 0 GPIO_ACTIVE_HIGH>, <&gpio2 5 GPIO_ACTIVE_HIGH>;
+  input-names = "irq"; input-gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
+  pinctrl-names = "default"; pinctrl-0 = <&pin_radio_io>;
+ };
+ ble0-da14580-gpios {
+  compatible = "nestlabs,gpio-exporter";
+  output-names = "reset"; output-gpios = <&gpio5 16 GPIO_ACTIVE_HIGH>;
+  pinctrl-names = "default"; pinctrl-0 = <&pin_ble_io>;
+ };
+ sensor-mcu-gpios {
+  compatible = "nestlabs,gpio-exporter";
+  output-names = "reset"; output-gpios = <&gpio5 14 GPIO_ACTIVE_HIGH>;
+  input-names = "detect#"; input-gpios = <&gpio5 13 GPIO_ACTIVE_LOW>;
+  pinctrl-names = "default"; pinctrl-0 = <&pin_backplate_io>;
+ };
+};
+&iomuxc {
+ pin_uart2: uart2-grp { fsl,pins = <
+  MX6SX_PAD_GPIO1_IO07__UART2_DCE_RX 0x1b0b1
+  MX6SX_PAD_GPIO1_IO06__UART2_DCE_TX 0x1b0b1
+ >; };
+ pin_uart5: uart5-grp { fsl,pins = <
+  MX6SX_PAD_SD4_DATA4__UART5_DCE_RX 0x1b0b1
+  MX6SX_PAD_SD4_DATA5__UART5_DCE_TX 0x1b0b1
+  MX6SX_PAD_SD4_DATA7__UART5_DCE_CTS 0x1a0b1
+  MX6SX_PAD_SD4_DATA6__UART5_DCE_RTS 0x1a0b1
+ >; };
+ pin_uart6: uart6-grp { fsl,pins = <
+  MX6SX_PAD_KEY_ROW1__UART6_DCE_RX 0x1b0b1
+  MX6SX_PAD_KEY_COL1__UART6_DCE_TX 0x1b0b1
+  MX6SX_PAD_KEY_ROW0__UART6_DCE_CTS 0x1b0b1
+  MX6SX_PAD_KEY_COL0__UART6_DCE_RTS 0x1b0b1
+ >; };
+ pin_ecspi3: ecspi3-grp { fsl,pins = <
+  MX6SX_PAD_QSPI1B_DATA1__ECSPI3_MISO 0x100b1
+  MX6SX_PAD_QSPI1B_DATA0__ECSPI3_MOSI 0x100b1
+  MX6SX_PAD_QSPI1B_SCLK__ECSPI3_SCLK 0x100b1
+  MX6SX_PAD_QSPI1B_SS0_B__GPIO4_IO_30 0xc0000000
+ >; };
+ pin_radio_io: radio-io-grp { fsl,pins = <
+  MX6SX_PAD_ENET1_COL__GPIO2_IO_0 0xc0000000
+  MX6SX_PAD_ENET1_RX_CLK__GPIO2_IO_4 0xc0000000
+  MX6SX_PAD_ENET1_TX_CLK__GPIO2_IO_5 0xc0000000
+ >; };
+ pin_ble_io: ble-io-grp { fsl,pins = <MX6SX_PAD_RGMII2_RX_CTL__GPIO5_IO_16 0xc0000000>; };
+ pin_backplate_io: backplate-io-grp { fsl,pins = <
+  MX6SX_PAD_RGMII2_RD1__GPIO5_IO_13 0xc0000000
+  MX6SX_PAD_RGMII2_RD2__GPIO5_IO_14 0xc0000000
+ >; };
+};
+
+&adc1 { #io-channel-cells = <1>; };
+&adc2 { #io-channel-cells = <1>; };

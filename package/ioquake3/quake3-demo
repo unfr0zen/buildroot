@@ -1,4 +1,4 @@
 #!/bin/sh
-exec quake3 +set sv_maxclients 8 +map q3dm1 \
+exec quake3 +set sv_maxclients 8 +set fraglimit 0 +set timelimit 0 +map q3dm1 \
  +addbot Sarge 3 +addbot Major 3 +wait 120 \
  +cmd team spectator +cmd follow 1 "$@"

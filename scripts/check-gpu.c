@@ -121,5 +121,26 @@ int main(void) {
             if (pixel[j] != colors[i * 4 + j]) failures++;
         }
     }
-    return failures ? 8 : 0;
+    if (failures) return 8;
+    fs = "precision mediump float; varying vec2 texcoord; uniform sampler2D image;"
+         "uniform float selectColor; void main(){if(selectColor>0.5)"
+         "gl_FragColor=vec4(1.0,0.0,1.0,1.0);"
+         "else gl_FragColor=texture2D(image,texcoord);}";
+    glShaderSource(fragment, 1, &fs, NULL);
+    glCompileShader(fragment);
+    glLinkProgram(program);
+    glGetProgramiv(program, GL_LINK_STATUS, &linked);
+    if (!linked) return 9;
+    glUseProgram(program);
+    for (unsigned selected = 0; selected < 2; selected++) {
+        glUniform1f(glGetUniformLocation(program, "selectColor"), selected);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        glFinish();
+        glReadPixels(4, 4, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+        printf("Branch %u: %u %u %u %u; error 0x%x\n", selected,
+               pixel[0], pixel[1], pixel[2], pixel[3], glGetError());
+        if (pixel[0] != 255 || pixel[1] || pixel[2] != selected * 255 ||
+            pixel[3] != 255) return 10;
+    }
+    return 0;
 }

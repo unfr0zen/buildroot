@@ -1,7 +1,8 @@
 #!/bin/sh
 set -eu
+sed -i '/^root:/s@:[^:]*$@:/bin/bash@' "$1/etc/passwd"
 sed -i '/^ttyGS0::/d' "$1/etc/inittab"
-echo 'ttyGS0::respawn:/sbin/getty -L -n -l /bin/sh ttyGS0 115200 vt100' >> "$1/etc/inittab"
+echo 'ttyGS0::respawn:/sbin/getty -L -n -l /usr/sbin/console-shell ttyGS0 115200 vt100' >> "$1/etc/inittab"
 firmware="$BR2_EXTERNAL_DIAMOND3_PATH/.work/firmware/brcm"
 mkdir -p "$1/lib/firmware/brcm"
 for name in brcmfmac43340-sdio.bin brcmfmac43340-sdio.txt; do
@@ -18,3 +19,4 @@ mkdir -p "$initramfs/dev" "$initramfs/sys" "$initramfs/proc" "$initramfs/newroot
 cp "$BUILD_DIR/diamond3-board-1/diamond3-init" "$initramfs/init"
 (cd "$initramfs" && find . | cpio --quiet -o -H newc --owner=0:0) | gzip -9 > "$BINARIES_DIR/initramfs.cpio.gz"
 "$HOST_DIR/bin/mkimage" -A arm -O linux -T ramdisk -C gzip -n Diamond3-init -d "$BINARIES_DIR/initramfs.cpio.gz" "$BINARIES_DIR/uInitrd"
+python3 "$BR2_EXTERNAL_DIAMOND3_PATH/scripts/mkconsole.py" "$BUILD_DIR/linux-7.3.1/lib/fonts/font_8x16.c" "$1"

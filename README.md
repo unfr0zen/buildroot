@@ -1,8 +1,9 @@
 # Diamond3 Buildroot
 
 Buildroot 2026.08.1, Linux 7.3.1, musl, BusyBox, eudev, iproute2, iw,
-wpa_supplicant, Dropbear, MTD/UBI tools, evtest, libgpiod tools, i2c-tools,
-USB tools, nano and less. No OTA service or update slots.
+wpa_supplicant, Dropbear, Bash, Starship 1.27.0, procps, htop, GNU grep,
+util-linux, MTD/UBI tools, evtest, libgpiod tools, i2c-tools, USB tools,
+nano and less. No OTA service or update slots.
 
 On macOS with Docker running:
 
@@ -77,9 +78,10 @@ flashing target is provided.
 Userspace uses Linux 7.1 headers with the Linux 7.3.1 runtime kernel.
 
 UART1 exposes a root login with an empty password. USB configfs creates a
-CDC ACM function and `/dev/ttyGS0` runs a root shell. USB enumeration
-and host-to-shell transfers require validation with a USB host. These defaults target
-local development. Wi-Fi credentials are supplied separately through
+composite CDC ACM/ECM gadget. `/dev/ttyGS0` runs a Bash root shell.
+The USB Ethernet interface is `192.168.77.1/24`; its DHCP server offers
+`192.168.77.10` through `.20` without replacing the host's default route
+or DNS. Dropbear accepts the empty root password for local development. Wi-Fi credentials are supplied separately through
 `/etc/wpa_supplicant.conf`; the image contains no network credentials.
 
 The board package initializes the HX8369 panel through GPIO-driven 9-bit
@@ -97,3 +99,17 @@ vectors. The complete `diamond3-rom-00000000-00018000.bin` includes them
 and can be run with `make rom ROM=/absolute/path/to/full-rom.bin`.
 Real HAB authentication needs the device's fuse state and ROM hardware
 dependencies modelled.
+
+The framebuffer console rotates 90 degrees clockwise. A twelve-line
+Braille thermostat banner uses a bundled 512-glyph console font. Bash
+initializes Starship with a plain-character, colored prompt; aliases live
+in `/etc/profile.d/30-aliases.sh`. `dmesg` uses util-linux color output.
+
+The piezo uses PWM1 and its active-low amplifier GPIO through the kernel
+`pwm-beeper` input driver. `diamond3-tone 2400 200` plays a 2400 Hz tone
+for 200 milliseconds; omitting arguments uses 2000 Hz for 200 ms.
+The QEMU runner sets the PWM model clock to 66 MHz to match this kernel.
+
+With the UI running, `python3 scripts/check-usb.py` verifies an ACM root
+shell and an ECM DHCP exchange through `.work/nand.usb.sock`. This is a
+virtual USB host; it does not create a macOS USB Ethernet interface.

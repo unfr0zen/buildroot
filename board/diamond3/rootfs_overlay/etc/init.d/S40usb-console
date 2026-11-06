@@ -11,8 +11,14 @@ case "$1" in
   mkdir -p strings/0x409
   echo diamond3 > strings/0x409/serialnumber
   echo Homebrew > strings/0x409/manufacturer
-  echo 'Diamond3 console' > strings/0x409/product
-  mkdir -p configs/c.1 functions/acm.usb0
+  echo 'Diamond3 console and Ethernet' > strings/0x409/product
+  echo 0xef > bDeviceClass
+  echo 0x02 > bDeviceSubClass
+  echo 0x01 > bDeviceProtocol
+  mkdir -p configs/c.1 functions/acm.usb0 functions/ecm.usb0
+  echo 02:00:00:77:00:01 > functions/ecm.usb0/dev_addr
+  echo 02:00:00:77:00:02 > functions/ecm.usb0/host_addr
+  ln -s functions/ecm.usb0 configs/c.1/
   ln -s functions/acm.usb0 configs/c.1/
   for controller in /sys/class/udc/*; do
    [ -e "$controller" ] || exit 1

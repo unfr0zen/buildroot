@@ -1,0 +1,4 @@
+#!/bin/sh
+[ "$1" = start ] || exit 0
+setfont -C /dev/tty1 /usr/share/consolefonts/thermostat.psf
+printf '\033%%G' > /dev/tty1

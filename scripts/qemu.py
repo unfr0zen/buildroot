@@ -2,6 +2,7 @@
 """Boot an isolated logical NAND through the user's unchanged signed U-Boot."""
 import argparse
 import os
+import re
 from pathlib import Path
 import select
 import subprocess
@@ -37,6 +38,7 @@ usb_socket = nand.with_suffix('.usb.sock')
 usb_socket.unlink(missing_ok=True)
 command = [str(a.qemu), '-M', 'diamond3,usb0-hostchar=usbhost', '-drive', f'file={nand},if=none,id=nand,format=raw',
            '-display', 'none', '-monitor', 'none', '-serial', 'stdio', '-nic', 'user,model=bcm43341',
+           '-global', 'imx.pwm.clock-frequency=66000000',
            '-chardev', f'socket,id=usbhost,path={usb_socket},server=on,wait=off']
 if a.ui:
     if a.smoke:
@@ -68,6 +70,7 @@ if a.ui:
 child = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 tail = b''
 booted = False
+checked = False
 deadline = time.monotonic() + 180
 try:
     while child.poll() is None:
@@ -87,7 +90,9 @@ try:
                 child.stdin.write(b'root\n')
                 child.stdin.flush()
                 tail = b''
-            if a.smoke and b'# ' in tail and booted:
+            clean = re.sub(rb'\x1b\[[0-?]*[ -/]*[@-~]', b'', tail)
+            if a.smoke and not checked and booted and (b'# ' in clean or b'root@diamond3' in clean):
+                checked = True
                 child.stdin.write(b'id; uname -r; df -h /; echo DIAMOND3_SMOKE_OK\n')
                 child.stdin.flush()
                 tail = b''

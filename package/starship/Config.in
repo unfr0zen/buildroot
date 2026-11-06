@@ -1,0 +1,5 @@
+config BR2_PACKAGE_STARSHIP
+ bool "Starship prompt"
+ depends on BR2_arm && BR2_ARM_EABIHF
+ help
+   Official ARM hard-float musl release of the Starship shell prompt.

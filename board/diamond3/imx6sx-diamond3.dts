@@ -77,3 +77,23 @@
  >; };
 };
 &wdog1 { status = "okay"; };
+/ {
+ piezo_amp: regulator-piezo {
+  compatible = "regulator-fixed";
+  regulator-name = "piezo-amplifier";
+  gpio = <&gpio1 5 GPIO_ACTIVE_LOW>;
+  pinctrl-names = "default";
+  pinctrl-0 = <&pin_piezo_enable>;
+ };
+ beeper {
+  compatible = "pwm-beeper";
+  pwms = <&pwm1 0 1000000 0>;
+  amp-supply = <&piezo_amp>;
+  beeper-hz = <2000>;
+ };
+};
+&pwm1 { pinctrl-names = "default"; pinctrl-0 = <&pin_piezo_pwm>; status = "okay"; };
+&iomuxc {
+ pin_piezo_enable: piezo-enable-grp { fsl,pins = <MX6SX_PAD_GPIO1_IO05__GPIO1_IO_5 0x110b0>; };
+ pin_piezo_pwm: piezo-pwm-grp { fsl,pins = <MX6SX_PAD_GPIO1_IO10__PWM1_OUT 0x110b0>; };
+};

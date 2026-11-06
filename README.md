@@ -2,7 +2,7 @@
 
 Buildroot 2026.08.1, Linux 7.3.1, musl, BusyBox, eudev, iproute2, iw,
 wpa_supplicant, Dropbear, Bash, Starship 1.27.0, procps, htop, GNU grep,
-util-linux, MTD/UBI tools, evtest, libgpiod tools, i2c-tools, USB tools,
+util-linux, btop 1.4.8, Neofetch, MTD/UBI tools, evtest, libgpiod tools, i2c-tools, USB tools,
 nano and less. No OTA service or update slots.
 
 On macOS with Docker running:
@@ -158,6 +158,20 @@ the bootloader supplies the operating clock.
 The official Linux firmware package supplies WL1271 firmware. The private
 stock NVS file supplies board calibration and stays under `.work/`.
 Physical display, wheel calibration, radio and USB operation require
-hardware validation. QEMU's J49 MUSB model currently represents an
-unplugged peripheral: the image configures ACM/ECM and DHCP, but J49 USB
-host transfers are not emulated.
+hardware validation. QEMU's J49 MUSB model supports the ACM/ECM gadget through its virtual USB
+host, including full/high speed transfers, endpoint stalls and cable
+reconnect. Run `python3 scripts/check-usb.py .work/j49-nand.usb.sock
+--ui http://127.0.0.1:8076` while the J49 UI is running.
+
+J49 uses the native upright framebuffer orientation (`fbcon=rotate:0`).
+Diamond3 rotates its console 90 degrees clockwise (`fbcon=rotate:1`).
+
+`htop` and `btop` use `nest-terminal` for live window-size updates over
+UART and USB ACM. It translates xterm character-size reports to PTY
+`TIOCSWINSZ` events, forwards keys, and restores terminal settings on exit.
+The web console enables xterm size reports; replaying old output does not
+send old reports into the shell. SSH and local framebuffer terminals use
+their normal terminal sizing. Serial terminals that do not answer xterm
+size queries can set their dimensions with `stty rows N cols N`.
+Both monitors use color-capable terminal settings, and `neofetch` displays
+system information. The boot banner is followed by one empty line.

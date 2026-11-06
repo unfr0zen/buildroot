@@ -1,0 +1,5 @@
+config BR2_PACKAGE_BTOP
+ bool "btop resource monitor"
+ depends on BR2_arm && BR2_ARM_CPU_ARMV7A
+ help
+   Official statically linked ARMv7 musl release of btop.

@@ -78,4 +78,4 @@ for row in range(12):
         text, color = labels[row]
         line += f'   \x1b[38;5;{color}m{text}'
     lines.append(line + '\x1b[0m')
-(root / 'etc/issue').write_text('\n'.join(lines) + '\n')
+(root / 'etc/issue').write_text('\n'.join(lines) + '\n\n')

@@ -37,6 +37,8 @@ if a.fresh or not nand.exists():
         ],
         check=True,
     )
+usb_socket = nand.with_suffix(".usb.sock")
+usb_socket.unlink(missing_ok=True)
 command = [
     str(a.qemu),
     "-M",
@@ -51,10 +53,14 @@ command = [
     "user,model=wl1271",
     "-global",
     "wl1271.fw-version=Rev 6.3.10.0.133",
+    "-global",
+    "driver=omap3-musb,property=hostchar,value=usbhost",
+    "-chardev",
+    f"socket,id=usbhost,path={usb_socket},server=on,wait=off",
 ]
 ui = None
 if a.ui:
-    work = root / ".work/j49"
+    work = nand.parent / (nand.stem + "-ui")
     work.mkdir(exist_ok=True)
     console, board, qmp = [
         work / name for name in ["console.sock", "board.sock", "qmp.sock"]

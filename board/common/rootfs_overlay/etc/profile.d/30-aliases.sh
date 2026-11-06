@@ -27,3 +27,6 @@ alias halt='/sbin/halt'
 
 alias dmesg='dmesg --color=always'
 alias ip='ip -color=auto'
+
+htop() { case "$1" in --help|--version|-h|-V) command htop "$@";; *) nest-terminal /usr/bin/htop "$@";; esac; }
+btop() { case "$1" in --help|--version|-h|-v) command btop "$@";; *) nest-terminal /usr/bin/btop "$@";; esac; }

@@ -50,6 +50,11 @@ for y in range(18, 24):
 labels = {1: (sys.argv[3].upper() if len(sys.argv) > 3 else 'DIAMOND3', 51), 2: ('unfr0zen', 255), 4: ('Linux 7.3.1', 45),
           5: ('Bash + Starship', 114), 7: ('USB 192.168.77.1', 45),
           8: ('SSH root@192.168.77.1', 255), 10: ('UART / ACM / ECM', 244)}
+if len(sys.argv) > 3 and sys.argv[3].lower() == 'onyx':
+    labels[5] = ('Bash', 114)
+    labels[7] = ('USB .77.1', 45)
+    labels[8] = ('SSH', 255)
+    labels[10] = ('ACM / ECM', 244)
 if len(sys.argv) > 3 and sys.argv[3].lower() == 'j49':
     labels[5] = ('Starship', 114)
     labels[7] = ('192.168.77.1', 45)

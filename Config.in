@@ -8,3 +8,5 @@ source "$BR2_EXTERNAL_DIAMOND3_PATH/package/nbnsd/Config.in"
 source "$BR2_EXTERNAL_DIAMOND3_PATH/package/jitterentropy-rngd/Config.in"
 source "$BR2_EXTERNAL_DIAMOND3_PATH/package/j49-uboot/Config.in"
 source "$BR2_EXTERNAL_DIAMOND3_PATH/package/j49-xloader/Config.in"
+
+source "$BR2_EXTERNAL_DIAMOND3_PATH/package/onyx-board/Config.in"

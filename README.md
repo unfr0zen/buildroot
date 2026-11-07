@@ -1,7 +1,7 @@
 # Nest Buildroot
 
 A boilerplate for anyone building custom Linux images for Nest hardware:
-Diamond3 and J49. Linux 7.3.1, Buildroot 2026.08.1, systemd, Bash, SSH,
+Diamond3, J49 and initial Onyx support. Linux 7.3.1, Buildroot 2026.08.1, systemd, Bash, SSH,
 USB serial/Ethernet, Wi-Fi and a framebuffer console. UBIFS uses the NAND
 space remaining after boot artifacts. No OTA.
 
@@ -42,3 +42,19 @@ Wi-Fi credentials belong in `/etc/wpa_supplicant.conf`.
 
 Linux builds natively using standard Buildroot host dependencies.
 On macOS, `make` automatically uses Docker.
+
+Onyx (Nest Thermostat E, initial support):
+
+```sh
+make BOARD=onyx
+make onyx-qemu-ui
+```
+
+Images: `output/onyx/images/`. The public signed Onyx SDP loader downloads
+with a SHA-256 check. QEMU uses open security fuses for the unsigned FIT;
+closed hardware requires an authorized unlock token or a signed kernel.
+The 320×320 TM025ZDHG03 console uses Nest's Onyx EVT R61529A1 panel
+sequence; physical display validation is pending. Wi-Fi, BLE, wheel and
+backplate integration remain outside initial Onyx support.
+`make onyx-qemu ROM=/path/to/onyx-rom.bin` executes a complete 96 KiB mask
+ROM and uploads the unchanged public loader through its USB SDP interface.

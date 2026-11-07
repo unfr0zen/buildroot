@@ -13,6 +13,8 @@ values = {
     'mtdparts': 'mtdparts=mx6_nand:4m(u-boot),-(ubipart)',
     'stdin': 'serial', 'stdout': 'serial', 'stderr': 'serial',
 }
+if len(sys.argv) > 2 and sys.argv[2] == 'onyx':
+    values = {'bootside': '0', 'brightness': '1800', 'nlmodel': 'Display-4.x'}
 payload = b''.join(f'{key}={value}'.encode() + b'\0' for key, value in values.items()) + b'\0'
 payload = payload.ljust(65536 - 5, b'\xff')
 for name, generation in [('env0', 1), ('env1', 0)]:

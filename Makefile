@@ -6,7 +6,7 @@ BOARD ?= diamond3
 HOST_OS := $(shell uname -s)
 BUILD_STARTED_AT := $(shell date +%s)
 BUILD_SUMMARY ?= 1
-OUT := $(ROOT)/output$(if $(filter j49,$(BOARD)),/j49,)
+OUT := $(ROOT)/output$(if $(filter-out diamond3,$(BOARD)),/$(BOARD),)
 UBOOT ?= $(ROOT)/output/images/u-boot-sdp-5.2d43-nand.bin
 BRMAKE = $(MAKE) -C $(BR) O=$(OUT) BR2_EXTERNAL=$(ROOT)
 
@@ -18,7 +18,7 @@ diamond3-defconfig configure: prepare
 ifeq ($(HOST_OS),Darwin)
 all: docker
 else
-all: prepare $(if $(filter diamond3,$(BOARD)),uboot,j49-toolchain)
+all: prepare $(if $(filter diamond3,$(BOARD)),uboot,j49-toolchain) $(if $(filter onyx,$(BOARD)),onyx-uboot,)
 	@test -f $(OUT)/.config || $(BRMAKE) $(BOARD)_defconfig
 	$(BRMAKE) -j8
 	@if [ "$(BUILD_SUMMARY)" = 1 ]; then python3 scripts/build-summary.py --board "$(BOARD)" --images "$(OUT)/images" --started "$(BUILD_STARTED_AT)"; fi
@@ -82,3 +82,13 @@ j49-qemu j49-qemu-ui:
 .PHONY: j49-smoke
 j49-smoke:
 	python3 scripts/qemu-j49.py $(QEMU_ARGS) --nand .work/j49-smoke.raw --fresh --smoke
+
+.PHONY: onyx-uboot onyx-defconfig onyx onyx-qemu onyx-qemu-ui onyx-smoke
+onyx-uboot:
+	python3 scripts/fetch-uboot.py output/onyx/images --board onyx
+onyx-defconfig:
+	$(MAKE) BOARD=onyx configure
+onyx:
+	$(MAKE) BOARD=onyx all
+onyx-qemu onyx-qemu-ui onyx-smoke: qemu-prepare onyx-uboot
+	python3 scripts/qemu-onyx.py $(QEMU_ARGS) $(if $(filter onyx-qemu-ui,$@),--ui,) $(if $(filter onyx-smoke,$@),--smoke --fresh,) $(if $(FRESH),--fresh,) $(if $(ROM),--rom "$(ROM)",)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package a Diamond3 logical NAND image for unfr0zen restore."""
+"""Package an i.MX Nest logical NAND image for unfr0zen restore."""
 import argparse
 import hashlib
 from pathlib import Path
@@ -14,11 +14,19 @@ BLOCK_SIZE = 0x20000
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--uboot", type=Path,
-                        default=ROOT / "output/images/u-boot-sdp-5.2d43-nand.bin")
-    parser.add_argument("--images", type=Path, default=ROOT / "output/images")
+                        default=None)
+    parser.add_argument("--images", type=Path, default=None)
     parser.add_argument("--output", type=Path,
-                        default=ROOT / "output/images/diamond3-buildroot.bin")
+                        default=None)
+    parser.add_argument('--board', choices=['diamond3', 'onyx'], default='diamond3')
     args = parser.parse_args()
+    if args.images is None:
+        args.images = ROOT / ('output/onyx/images' if args.board == 'onyx' else 'output/images')
+    if args.uboot is None:
+        name = 'u-boot-sdp-5.8d44-onyx-0NUR' if args.board == 'onyx' else 'u-boot-sdp-5.2d43'
+        args.uboot = args.images / (name + '-nand.bin')
+    if args.output is None:
+        args.output = args.images / (args.board + '-buildroot.bin')
     boot = args.uboot.read_bytes()
     if len(boot) < 0x420 or boot[0x400:0x404] != bytes.fromhex("d1002040"):
         parser.error("U-Boot must contain an i.MX IVT at offset 0x400")
@@ -49,8 +57,10 @@ def main():
     ]
     validate_components(components)
     print("  DBBT: four generated records in 0x00080000–0x000fffff")
-    for name, filename in [("kernel", "uImage"), ("dtb", "imx6sx-diamond3.dtb"),
-                           ("initramfs", "uInitrd"), ("rootfs", "rootfs.ubifs")]:
+    payloads = [('fit', 'kernel_fdt.itb'), ('kernel', 'zImage'), ('dtb', 'imx6ul-onyx.dtb')] \
+        if args.board == 'onyx' else [('kernel', 'uImage'), ('dtb', 'imx6sx-diamond3.dtb'),
+                                     ('initramfs', 'uInitrd')]
+    for name, filename in payloads + [('rootfs', 'rootfs.ubifs')]:
         payload = args.images / filename
         if payload.exists():
             print(f"  {name}: {payload.stat().st_size} bytes [dynamic UBI volume mapping]")

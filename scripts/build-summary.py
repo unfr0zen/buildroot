@@ -5,7 +5,7 @@ from pathlib import Path
 import time
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--board', choices=['diamond3', 'j49'], required=True)
+parser.add_argument('--board', choices=['diamond3', 'j49', 'onyx'], required=True)
 parser.add_argument('--images', type=Path, required=True)
 parser.add_argument('--started', type=int, required=True)
 parser.add_argument('--copied', action='store_true')

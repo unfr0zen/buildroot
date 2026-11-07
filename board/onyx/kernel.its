@@ -1,0 +1,23 @@
+/dts-v1/;
+/ {
+    description = "Onyx Buildroot Linux";
+    #address-cells = <1>;
+    images {
+        kernel { description = "Linux 7.3.1"; data = /incbin/("zImage");
+            type = "kernel"; arch = "arm"; os = "linux"; compression = "none";
+            load = <0x80008000>; entry = <0x80008000>;
+            hash { algo = "sha256"; };
+        };
+        ramdisk { description = "Onyx UBIFS root mount"; data = /incbin/("initramfs.cpio.gz");
+            type = "ramdisk"; arch = "arm"; os = "linux"; compression = "gzip";
+            hash { algo = "sha256"; };
+        };
+        fdt { description = "Onyx device tree"; data = /incbin/("imx6ul-onyx.dtb");
+            type = "flat_dt"; arch = "arm"; compression = "none";
+            hash { algo = "sha256"; };
+        };
+    };
+    configurations { default = "Display-4.x";
+        Display-4.x { description = "Nest Thermostat E"; kernel = "kernel"; fdt = "fdt"; ramdisk = "ramdisk"; };
+    };
+};

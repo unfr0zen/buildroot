@@ -1,0 +1,158 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/* Pin assignments: Copyright (C) 2016 Nest Labs, Inc. */
+/dts-v1/;
+#include "nxp/imx/imx6ul.dtsi"
+#include "nxp/imx/imx6ul-pinfunc.h"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#define PAD_CONFIG__DEFAULT 0x1008
+#define PAD_CONFIG__GPIO 0x40001008
+#define PAD_CONFIG__I2C 0x40001808
+
+/ {
+    model = "Nest Thermostat E (Onyx)";
+    compatible = "nestlabs,onyx-evt", "fsl,imx6ul";
+    memory@80000000 { device_type = "memory"; reg = <0x80000000 0x08000000>; };
+    chosen { stdout-path = "serial0:115200n8"; };
+    gpio-keys {
+        compatible = "gpio-keys";
+        pinctrl-names = "default"; pinctrl-0 = <&pinctrl_button>;
+        button { label = "HU Button"; linux,code = <KEY_ENTER>;
+            gpios = <&gpio2 8 GPIO_ACTIVE_LOW>; debounce-interval = <20>; };
+    };
+    adc_ref: regulator-adc { compatible = "regulator-fixed";
+        regulator-name = "adc-reference"; regulator-min-microvolt = <1800000>;
+        regulator-max-microvolt = <1800000>; regulator-always-on; };
+};
+&uart1 { pinctrl-names = "default"; pinctrl-0 = <&pinctrl_uart1>; status = "okay"; };
+&uart2 { pinctrl-names = "default"; pinctrl-0 = <&pinctrl_uart2_1>;
+    uart-has-rtscts; status = "okay"; };
+&uart3 { pinctrl-names = "default"; pinctrl-0 = <&pinctrl_uart3_1>;
+    uart-has-rtscts; status = "okay"; };
+&i2c2 { pinctrl-names = "default"; pinctrl-0 = <&pinctrl_i2c2_1>;
+    clock-frequency = <100000>; status = "okay"; };
+&ecspi2 {
+    pinctrl-names = "default"; pinctrl-0 = <&pinctrl_ecspi2_1>;
+    cs-gpios = <&gpio1 29 GPIO_ACTIVE_LOW>; status = "okay";
+    panel@0 { compatible = "nestlabs,onyx-panel"; reg = <0>;
+        spi-max-frequency = <500000>; spi-cpol; spi-cpha;
+        reset-gpios = <&gpio3 4 GPIO_ACTIVE_LOW>;
+        port { panel_in: endpoint { remote-endpoint = <&lcd_out>; }; };
+    };
+};
+&lcdif { pinctrl-names = "default";
+    pinctrl-0 = <&pinctrl_lcdif_dat_1 &pinctrl_lcdif_ctrl_1>;
+    status = "okay";
+    port { lcd_out: endpoint { remote-endpoint = <&panel_in>; }; };
+};
+&gpmi { status = "okay"; nand-on-flash-bbt;
+    partitions { compatible = "fixed-partitions"; #address-cells = <1>; #size-cells = <1>;
+        partition@0 { label = "u-boot"; reg = <0 0x400000>; read-only; };
+        partition@400000 { label = "ubipart"; reg = <0x400000 0x1fb80000>; };
+    };
+};
+&usbotg1 { dr_mode = "peripheral"; disable-over-current; status = "okay"; };
+&iomuxc {
+    pinctrl_uart1: uart1grp { fsl,pins = <
+        MX6UL_PAD_UART1_TX_DATA__UART1_DCE_TX 0x1008
+        MX6UL_PAD_UART1_RX_DATA__UART1_DCE_RX 0x1008
+    >; };
+pinctrl_i2c2_1: i2c2grp-1 {
+			fsl,pins = <
+				MX6UL_PAD_GPIO1_IO00__I2C2_SCL          PAD_CONFIG__I2C         /* I2C_AP_PIN_LCD_SCK */
+				MX6UL_PAD_GPIO1_IO01__I2C2_SDA          PAD_CONFIG__I2C         /* I2C_AP_PIN_LCD_SDA */
+			>;
+};
+pinctrl_uart2_1: uart2grp-1 {
+			fsl,pins = <
+				MX6UL_PAD_UART2_RX_DATA__UART2_DCE_RX   PAD_CONFIG__DEFAULT     /* UART_MCU_TO_AP */
+				MX6UL_PAD_UART2_TX_DATA__UART2_DCE_TX   PAD_CONFIG__DEFAULT     /* UART_AP_TO_MCU */
+				MX6UL_PAD_UART2_CTS_B__UART2_DCE_CTS    PAD_CONFIG__DEFAULT     /* UART_FLOW_AP_TO_MCU */
+				MX6UL_PAD_UART2_RTS_B__UART2_DCE_RTS    PAD_CONFIG__DEFAULT     /* UART_FLOW_MCU_TO_AP */
+			>;
+};
+pinctrl_uart3_1: uart3grp-1 {
+			fsl,pins = <
+				MX6UL_PAD_UART3_TX_DATA__UART3_DCE_TX   PAD_CONFIG__DEFAULT     /* UART_AP_TO_BLE */
+				MX6UL_PAD_UART3_RX_DATA__UART3_DCE_RX   PAD_CONFIG__DEFAULT     /* UART_BLE_TO_AP */
+				MX6UL_PAD_UART3_RTS_B__UART3_DCE_RTS    PAD_CONFIG__DEFAULT     /* UART_FLOW_BLE_TO_AP */
+				MX6UL_PAD_UART3_CTS_B__UART3_DCE_CTS    PAD_CONFIG__DEFAULT     /* UART_FLOW_AP_TO_BLE */
+			>;
+};
+pinctrl_usdhc2_1: usdhc2grp {
+			fsl,pins = <
+				MX6UL_PAD_CSI_VSYNC__USDHC2_CLK         PAD_CONFIG__DEFAULT     /* AP_SDIO_WIFI_CLK */
+				MX6UL_PAD_CSI_HSYNC__USDHC2_CMD         PAD_CONFIG__DEFAULT     /* AP_SDIO_WIFI_CMD */
+				MX6UL_PAD_CSI_DATA00__USDHC2_DATA0      PAD_CONFIG__DEFAULT     /* AP_SDIO_WIFI_DATA0 */
+				MX6UL_PAD_CSI_DATA01__USDHC2_DATA1      PAD_CONFIG__DEFAULT     /* AP_SDIO_WIFI_DATA1 */
+				MX6UL_PAD_CSI_DATA02__USDHC2_DATA2      PAD_CONFIG__DEFAULT     /* AP_SDIO_WIFI_DATA2 */
+				MX6UL_PAD_CSI_DATA03__USDHC2_DATA3      PAD_CONFIG__DEFAULT     /* AP_SDIO_WIFI_DATA3 */
+			>;
+};
+pinctrl_lcdif_dat_1: lcdifdatgrp-1 {
+			fsl,pins = <
+				MX6UL_PAD_LCD_DATA00__LCDIF_DATA00      PAD_CONFIG__DEFAULT     /* LCD_DATA0 */
+				MX6UL_PAD_LCD_DATA01__LCDIF_DATA01      PAD_CONFIG__DEFAULT     /* LCD_DATA1 */
+				MX6UL_PAD_LCD_DATA02__LCDIF_DATA02      PAD_CONFIG__DEFAULT     /* LCD_DATA2 */
+				MX6UL_PAD_LCD_DATA03__LCDIF_DATA03      PAD_CONFIG__DEFAULT     /* LCD_DATA3 */
+				MX6UL_PAD_LCD_DATA04__LCDIF_DATA04      PAD_CONFIG__DEFAULT     /* LCD_DATA4 */
+				MX6UL_PAD_LCD_DATA05__LCDIF_DATA05      PAD_CONFIG__DEFAULT     /* LCD_DATA5 */
+				MX6UL_PAD_LCD_DATA06__LCDIF_DATA06      PAD_CONFIG__DEFAULT     /* LCD_DATA6 */
+				MX6UL_PAD_LCD_DATA07__LCDIF_DATA07      PAD_CONFIG__DEFAULT     /* LCD_DATA7 */
+				MX6UL_PAD_LCD_DATA08__LCDIF_DATA08      PAD_CONFIG__DEFAULT     /* LCD_DATA8 */
+				MX6UL_PAD_LCD_DATA09__LCDIF_DATA09      PAD_CONFIG__DEFAULT     /* LCD_DATA9 */
+				MX6UL_PAD_LCD_DATA10__LCDIF_DATA10      PAD_CONFIG__DEFAULT     /* LCD_DATA10 */
+				MX6UL_PAD_LCD_DATA11__LCDIF_DATA11      PAD_CONFIG__DEFAULT     /* LCD_DATA11 */
+				MX6UL_PAD_LCD_DATA12__LCDIF_DATA12      PAD_CONFIG__DEFAULT     /* LCD_DATA12 */
+				MX6UL_PAD_LCD_DATA13__LCDIF_DATA13      PAD_CONFIG__DEFAULT     /* LCD_DATA13 */
+				MX6UL_PAD_LCD_DATA14__LCDIF_DATA14      PAD_CONFIG__DEFAULT     /* LCD_DATA14 */
+				MX6UL_PAD_LCD_DATA15__LCDIF_DATA15      PAD_CONFIG__DEFAULT     /* LCD_DATA15 */
+				MX6UL_PAD_LCD_DATA16__LCDIF_DATA16      PAD_CONFIG__DEFAULT     /* LCD_DATA16 */
+				MX6UL_PAD_LCD_DATA17__LCDIF_DATA17      PAD_CONFIG__DEFAULT     /* LCD_DATA17 */
+				MX6UL_PAD_LCD_DATA18__LCDIF_DATA18      PAD_CONFIG__DEFAULT     /* LCD_DATA18 */
+				MX6UL_PAD_LCD_DATA19__LCDIF_DATA19      PAD_CONFIG__DEFAULT     /* LCD_DATA19 */
+				MX6UL_PAD_LCD_DATA20__LCDIF_DATA20      PAD_CONFIG__DEFAULT     /* LCD_DATA20 */
+				MX6UL_PAD_LCD_DATA21__LCDIF_DATA21      PAD_CONFIG__DEFAULT     /* LCD_DATA21 */
+				MX6UL_PAD_LCD_DATA22__LCDIF_DATA22      PAD_CONFIG__DEFAULT     /* LCD_DATA22 */
+				MX6UL_PAD_LCD_DATA23__LCDIF_DATA23      PAD_CONFIG__DEFAULT     /* LCD_DATA23 */
+			>;
+};
+pinctrl_lcdif_ctrl_1: lcdifctrlgrp-1 {
+			fsl,pins = <
+				MX6UL_PAD_LCD_CLK__LCDIF_CLK            PAD_CONFIG__DEFAULT     /* LCD_CLK */
+				MX6UL_PAD_LCD_ENABLE__LCDIF_ENABLE      PAD_CONFIG__DEFAULT     /* LCD_ENABLE */
+				MX6UL_PAD_LCD_VSYNC__LCDIF_VSYNC        PAD_CONFIG__DEFAULT     /* LCD_VSYNC */
+				MX6UL_PAD_LCD_HSYNC__LCDIF_HSYNC        PAD_CONFIG__DEFAULT     /* LCD_HSYNC */
+				MX6UL_PAD_LCD_RESET__GPIO3_IO04         PAD_CONFIG__GPIO        /* LCD_RESET */
+			>;
+};
+pinctrl_ecspi2_1: ecspi2grp-1 {
+			fsl,pins = <
+				MX6UL_PAD_UART5_RX_DATA__ECSPI2_MISO    PAD_CONFIG__DEFAULT     /* SPI_AP_LCD_MISO */
+				MX6UL_PAD_UART5_TX_DATA__ECSPI2_MOSI    PAD_CONFIG__DEFAULT     /* SPI_AP_LCD_MOSI */
+				MX6UL_PAD_UART4_TX_DATA__ECSPI2_SCLK    PAD_CONFIG__DEFAULT     /* SPI_AP_LCD_CLK */
+			>;
+};
+pinctrl_ecspi4_1: ecspi4grp-1 {
+			fsl,pins = <
+				MX6UL_PAD_ENET2_TX_CLK__ECSPI4_MISO     PAD_CONFIG__DEFAULT     /* SPI_6LO_MISO */
+				MX6UL_PAD_ENET2_TX_EN__ECSPI4_MOSI      PAD_CONFIG__DEFAULT     /* SPI_6LO_MOSI */
+				MX6UL_PAD_ENET2_TX_DATA1__ECSPI4_SCLK   PAD_CONFIG__DEFAULT     /* SPI_6LO_SCLK */
+			>;
+};
+pinctrl_pwm8_0: pwm8grp-0 {
+			fsl,pins = <
+				MX6UL_PAD_ENET1_RX_ER__PWM8_OUT         PAD_CONFIG__DEFAULT     /* PWM_PIEZO_DRIVE */
+			>;
+};
+};
+
+&iomuxc {
+    pinctrl_backlight: backlightgrp { fsl,pins = <MX6UL_PAD_NAND_DQS__GPIO4_IO16 0x1008>; };
+    pinctrl_button: buttongrp { fsl,pins = <MX6UL_PAD_ENET2_RX_DATA0__GPIO2_IO08 0x1008>; };
+};
+&gpio4 {
+    pinctrl-names = "default"; pinctrl-0 = <&pinctrl_backlight>;
+    backlight-enable-hog { gpio-hog; gpios = <16 GPIO_ACTIVE_HIGH>;
+        output-high; line-name = "LCD_BL_EN"; };
+};

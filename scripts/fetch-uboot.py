@@ -16,7 +16,14 @@ NAME = 'u-boot-sdp-5.2d43'
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output', type=Path)
+    parser.add_argument('--board', choices=['diamond3', 'onyx'], default='diamond3')
     args = parser.parse_args()
+    global URL, SHA256, NAME
+    if args.board == 'onyx':
+        NAME = 'u-boot-sdp-5.8d44-onyx-0NUR'
+        SHA256 = '1c204314ed1e536979e5512217e5baa386796500d6c0aca9460862aabb13b033'
+        URL = ('https://nest-open-source.googlesource.com/nest-learning-thermostat/5.7/'
+               'u-boot/+/refs/heads/master/bin/onyx/release/' + NAME + '.hab?format=TEXT')
     args.output.mkdir(parents=True, exist_ok=True)
     raw = args.output / (NAME + '.hab')
     if not raw.exists() or hashlib.sha256(raw.read_bytes()).hexdigest() != SHA256:

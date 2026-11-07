@@ -4,4 +4,4 @@
 [submodule "qemu"]
 	path = qemu
 	url = https://github.com/unfr0zen/qemu.git
-	branch = feature/onyx
+	branch = main

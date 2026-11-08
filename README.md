@@ -1,4 +1,6 @@
 # Nest Buildroot
+[![Discord](https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white)](https://discord.gg/4YC7Yj3Tx)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-donate-yellow.svg)](https://buymeacoffee.com/willtm)
 
 A boilerplate for anyone building custom Linux images for Nest hardware:
 Diamond3, J49 and initial Onyx support. Linux 7.3.1, Buildroot 2026.08.1, systemd, Bash, SSH,

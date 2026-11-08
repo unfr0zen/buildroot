@@ -1,4 +1,5 @@
 # Nest Buildroot
+[![GitHub License](https://img.shields.io/github/license/unfr0zen/buildroot)](LICENSE)
 [![Discord](https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white)](https://discord.gg/4YC7Yj3Tx)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-donate-yellow.svg)](https://buymeacoffee.com/willtm)
 

@@ -1,6 +1,6 @@
 # Nest Buildroot
 [![GitHub License](https://img.shields.io/github/license/unfr0zen/buildroot)](LICENSE)
-[![Discord](https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white)](https://discord.gg/4YC7Yj3Tx)
+[![Discord](https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white)](https://discord.gg/fBqjAFARYg)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-donate-yellow.svg)](https://buymeacoffee.com/willtm)
 
 A boilerplate for anyone building custom Linux images for Nest hardware:

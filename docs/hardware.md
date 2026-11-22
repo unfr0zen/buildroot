@@ -25,6 +25,8 @@ remain disabled to avoid pin conflicts.
 SPI LCD devices belong to their panel drivers and do not expose a spidev
 node. The radio device uses an explicit spidev driver override.
 
+The [Onyx board reference](../board/onyx/README.md) lists the Thermostat E wiring and Linux interfaces.
+
 ## Readings and controls
 
 `nest-status` reports battery voltage, CPU temperature, available backplate

@@ -28,8 +28,8 @@ one more boots it in [QEMU](https://github.com/unfr0zen/qemu), ring, screen and 
 - **Mainline Linux 7.3.1** with device trees for each board, Buildroot 2026.08.1 and systemd.
 - **A shell worth logging into.** Bash with Starship, SSH (Dropbear), nano, htop, btop, neofetch, iperf3, i2c-tools,
   spi-tools, evtest and libgpiod.
-- **Plug in and go.** USB serial and USB Ethernet (`192.168.77.1/24`, with DHCP); Avahi advertises `diamond3.local` or
-  `j49.local`, and SSH host keys are made on first boot.
+- **Plug in and go.** USB serial and USB Ethernet (`192.168.77.1/24`, with DHCP); Avahi advertises `diamond3.local`,
+  `j49.local` or `onyx.local`, and SSH host keys are made on first boot.
 - **The hardware, as Linux devices.** The ring as a `REL_DIAL` input, the button, the piezo (`nest-tone 2400 200`),
   backplate temperature, humidity, light and motion (`nest-backplate`), the battery, ADCs and GPIOs. `nest-status`
   shows it all.
@@ -45,7 +45,7 @@ one more boots it in [QEMU](https://github.com/unfr0zen/qemu), ring, screen and 
 
 | Nest | Board | SoC | Build | Run in QEMU | Images |
 | --- | --- | --- | --- | --- | --- |
-| Thermostat E | `onyx` (initial support) | i.MX6UL | `make BOARD=onyx` | `make onyx-qemu-ui` | `output/onyx/images/` |
+| Thermostat E | `onyx` | i.MX6UL | `make BOARD=onyx` | `make onyx-qemu-ui` | `output/onyx/images/` |
 | 3rd gen | `diamond3` | i.MX6SoloX | `make` | `make qemu-ui` | `output/images/` |
 | 2nd gen | `j49` | TI AM3703 | `make BOARD=j49` | `make j49-qemu-ui` | `output/j49/images/` |
 
@@ -86,17 +86,21 @@ make j49-qemu-ui
 x-loader and U-Boot are built from pinned Nest GPL sources; no signed or prebuilt bootloader is required.
 `j49-buildroot.bin` includes both stages.
 
-### onyx (Thermostat E, initial support)
+### onyx (Thermostat E)
 
 ```sh
 make BOARD=onyx
 make onyx-qemu-ui
+make onyx-smoke
 ```
 
-The public signed Onyx SDP loader downloads with a SHA-256 check. QEMU uses open security fuses for the unsigned FIT;
-closed hardware requires an authorized unlock token or a signed kernel. The 320×320 TM025ZDHG03 console uses Nest's Onyx
-EVT R61529A1 panel sequence; physical display validation is pending. Wi-Fi, BLE, wheel and backplate integration remain
-outside initial Onyx support.
+The public signed Onyx SDP loader downloads with a SHA-256 check. QEMU uses open security fuses for the unsigned FIT.
+Closed hardware requires an authorized unlock token or a signed kernel. The 320×320 TM025ZDHG03 console uses Nest's
+Onyx EVT R61529A1 panel sequence. Physical display validation is pending.
+
+QEMU attaches the BCM43341 Wi-Fi, UART3 backplate and ECSPI4 Thread radio. Linux exposes the wheel and front button
+as input devices, battery voltage through the power-supply driver, and the piezo through `nest-tone`. The Thread radio
+speaks Spinel on `/dev/spidev_em35x`. QEMU exposes the BLE UART without a Bluetooth radio model.
 
 `make onyx-qemu ROM=/path/to/onyx-rom.bin` executes a complete 96 KiB mask ROM and uploads the unchanged public loader
 through its USB SDP interface.
@@ -107,7 +111,7 @@ through its USB SDP interface.
 - **Network:** USB Ethernet at `192.168.77.1/24`, serving DHCP. SSH host keys are generated on first boot and kept on
   UBIFS.
 - **Wi-Fi:** write `/etc/wpa_supplicant.conf`, then `systemctl enable --now wpa_supplicant@wlan0`. Firmware and the
-  j49's NVS come from `linux-firmware`; the diamond3's radio parameters are in its board overlay. No credentials ship
+  j49's NVS come from `linux-firmware`. Diamond3 and Onyx share the BCM43341 board parameters. No credentials ship
   in the image.
 - **Storage:** UBIFS takes the NAND space left after the boot artifacts. No OTA.
 

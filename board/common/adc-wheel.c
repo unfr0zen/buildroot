@@ -23,6 +23,13 @@ static int sample(const char *base, int channel, double *result)
 }
 int main(void)
 {
+#ifdef ONYX
+ const char *adc_name = "2198000.adc", *wheel_name = "Onyx wheel";
+ const int x_channel = 7, y_channel = 6;
+#else
+ const char *adc_name = "2280000.adc", *wheel_name = "Diamond3 wheel";
+ const int x_channel = 1, y_channel = 2;
+#endif
  glob_t paths;
  char adc[512] = "";
  if (glob("/sys/bus/iio/devices/iio:device*", 0, NULL, &paths)) return 1;
@@ -32,20 +39,21 @@ int main(void)
   FILE *f = fopen(path, "r");
   if (!f) continue;
   int ok = fscanf(f, "%63s", name); fclose(f);
-  if (ok == 1 && strstr(name, "2280000.adc")) { snprintf(adc, sizeof(adc), "%s", paths.gl_pathv[i]); break; }
+  if (ok == 1 && strstr(name, adc_name)) { snprintf(adc, sizeof(adc), "%s", paths.gl_pathv[i]); break; }
  }
  globfree(&paths);
  if (!adc[0]) return 1;
  int fd = open("/dev/uinput", O_WRONLY);
  if (fd < 0) return 1;
- struct uinput_setup setup = { .id = { .bustype = BUS_HOST }, .name = "Diamond3 wheel" };
+ struct uinput_setup setup = { .id = { .bustype = BUS_HOST } };
+ snprintf(setup.name, sizeof(setup.name), "%s", wheel_name);
  if (ioctl(fd, UI_SET_EVBIT, EV_REL) || ioctl(fd, UI_SET_RELBIT, REL_DIAL) ||
      ioctl(fd, UI_DEV_SETUP, &setup) || ioctl(fd, UI_DEV_CREATE)) return 1;
  double previous = 0, accumulated = 0;
  int initialized = 0;
  for (;;) {
   double x, y;
-  if (sample(adc, 1, &x) || sample(adc, 2, &y)) return 1;
+  if (sample(adc, x_channel, &x) || sample(adc, y_channel, &y)) return 1;
   x -= 1965; y -= 2038;
   if (hypot(x, y) > 100) {
    double angle = atan2(y, x);

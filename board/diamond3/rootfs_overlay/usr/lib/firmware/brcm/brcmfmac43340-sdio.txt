@@ -1,4 +1,4 @@
-# Diamond3 Murata 1BV radio parameters.
+# Murata 1BV radio parameters.
 manfid=0x2d0
 prodid=0x0653
 vendid=0x14e4

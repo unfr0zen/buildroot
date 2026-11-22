@@ -65,18 +65,18 @@ pinctrl_i2c2_1: i2c2grp-1 {
 };
 pinctrl_uart2_1: uart2grp-1 {
 			fsl,pins = <
-				MX6UL_PAD_UART2_RX_DATA__UART2_DCE_RX   PAD_CONFIG__DEFAULT     /* UART_MCU_TO_AP */
-				MX6UL_PAD_UART2_TX_DATA__UART2_DCE_TX   PAD_CONFIG__DEFAULT     /* UART_AP_TO_MCU */
-				MX6UL_PAD_UART2_CTS_B__UART2_DCE_CTS    PAD_CONFIG__DEFAULT     /* UART_FLOW_AP_TO_MCU */
-				MX6UL_PAD_UART2_RTS_B__UART2_DCE_RTS    PAD_CONFIG__DEFAULT     /* UART_FLOW_MCU_TO_AP */
+				MX6UL_PAD_UART2_RX_DATA__UART2_DCE_RX   PAD_CONFIG__DEFAULT
+				MX6UL_PAD_UART2_TX_DATA__UART2_DCE_TX   PAD_CONFIG__DEFAULT
+				MX6UL_PAD_UART2_CTS_B__UART2_DCE_CTS    PAD_CONFIG__DEFAULT
+				MX6UL_PAD_UART2_RTS_B__UART2_DCE_RTS    PAD_CONFIG__DEFAULT
 			>;
 };
 pinctrl_uart3_1: uart3grp-1 {
 			fsl,pins = <
-				MX6UL_PAD_UART3_TX_DATA__UART3_DCE_TX   PAD_CONFIG__DEFAULT     /* UART_AP_TO_BLE */
-				MX6UL_PAD_UART3_RX_DATA__UART3_DCE_RX   PAD_CONFIG__DEFAULT     /* UART_BLE_TO_AP */
-				MX6UL_PAD_UART3_RTS_B__UART3_DCE_RTS    PAD_CONFIG__DEFAULT     /* UART_FLOW_BLE_TO_AP */
-				MX6UL_PAD_UART3_CTS_B__UART3_DCE_CTS    PAD_CONFIG__DEFAULT     /* UART_FLOW_AP_TO_BLE */
+				MX6UL_PAD_UART3_TX_DATA__UART3_DCE_TX   PAD_CONFIG__DEFAULT
+				MX6UL_PAD_UART3_RX_DATA__UART3_DCE_RX   PAD_CONFIG__DEFAULT
+				MX6UL_PAD_UART3_RTS_B__UART3_DCE_RTS    PAD_CONFIG__DEFAULT
+				MX6UL_PAD_UART3_CTS_B__UART3_DCE_CTS    PAD_CONFIG__DEFAULT
 			>;
 };
 pinctrl_usdhc2_1: usdhc2grp {
@@ -135,6 +135,7 @@ pinctrl_ecspi2_1: ecspi2grp-1 {
 };
 pinctrl_ecspi4_1: ecspi4grp-1 {
 			fsl,pins = <
+				MX6UL_PAD_ENET2_RX_ER__GPIO2_IO15 PAD_CONFIG__GPIO
 				MX6UL_PAD_ENET2_TX_CLK__ECSPI4_MISO     PAD_CONFIG__DEFAULT     /* SPI_6LO_MISO */
 				MX6UL_PAD_ENET2_TX_EN__ECSPI4_MOSI      PAD_CONFIG__DEFAULT     /* SPI_6LO_MOSI */
 				MX6UL_PAD_ENET2_TX_DATA1__ECSPI4_SCLK   PAD_CONFIG__DEFAULT     /* SPI_6LO_SCLK */
@@ -155,4 +156,135 @@ pinctrl_pwm8_0: pwm8grp-0 {
     pinctrl-names = "default"; pinctrl-0 = <&pinctrl_backlight>;
     backlight-enable-hog { gpio-hog; gpios = <16 GPIO_ACTIVE_HIGH>;
         output-high; line-name = "LCD_BL_EN"; };
+};
+
+/ {
+    battery {
+        compatible = "nestlabs,adc-battery";
+        io-channels = <&adc1 4>;
+        io-channel-names = "voltage";
+        divider-r1-ohm = <169>;
+        divider-r2-ohm = <124>;
+        enable-gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
+        delay-us = <8000>;
+    };
+
+    piezo_amp: regulator-piezo {
+        compatible = "regulator-fixed";
+        regulator-name = "piezo-amplifier";
+        gpio = <&gpio2 6 GPIO_ACTIVE_LOW>;
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_piezo_enable>;
+    };
+
+    beeper {
+        compatible = "pwm-beeper";
+        pwms = <&pwm8 0 500000 0>;
+        amp-supply = <&piezo_amp>;
+        beeper-hz = <2000>;
+    };
+
+    wifi_pwrseq: wifi-pwrseq {
+        compatible = "mmc-pwrseq-simple";
+        reset-gpios = <&gpio2 16 GPIO_ACTIVE_LOW>;
+        post-power-on-delay-ms = <200>;
+    };
+
+    sensor-mcu-gpios {
+        compatible = "nestlabs,gpio-exporter";
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_backplate>;
+        output-gpios = <&gpio1 18 GPIO_ACTIVE_LOW>;
+        output-names = "reset";
+        input-gpios = <&gpio4 28 GPIO_ACTIVE_LOW>;
+        input-names = "detect#";
+    };
+
+    em35x-gpios {
+        compatible = "nestlabs,gpio-exporter";
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_thread>;
+        output-gpios = <&gpio2 2 GPIO_ACTIVE_LOW>, <&gpio2 19 GPIO_ACTIVE_LOW>;
+        output-names = "wake", "reset";
+        input-gpios = <&gpio2 18 GPIO_ACTIVE_HIGH>;
+        input-names = "irq";
+    };
+};
+
+&adc1 {
+    pinctrl-names = "default";
+    pinctrl-0 = <&pinctrl_adc>;
+    vref-supply = <&adc_ref>;
+    status = "okay";
+};
+
+&gpio2 {
+    hall-enable {
+        gpio-hog;
+        gpios = <21 GPIO_ACTIVE_LOW>;
+        output-high;
+        line-name = "hall-enable";
+    };
+};
+
+&pwm8 {
+    pinctrl-names = "default";
+    pinctrl-0 = <&pinctrl_pwm8_0>;
+    status = "okay";
+};
+
+&usdhc2 {
+    pinctrl-names = "default";
+    pinctrl-0 = <&pinctrl_usdhc2_1 &pinctrl_wifi>;
+    bus-width = <4>;
+    non-removable;
+    mmc-pwrseq = <&wifi_pwrseq>;
+    status = "okay";
+    #address-cells = <1>;
+    #size-cells = <0>;
+    wifi@1 {
+        compatible = "brcm,bcm4329-fmac";
+        reg = <1>;
+        interrupt-parent = <&gpio2>;
+        interrupts = <17 IRQ_TYPE_LEVEL_HIGH>;
+        interrupt-names = "host-wake";
+    };
+};
+
+&ecspi4 {
+    pinctrl-names = "default";
+    pinctrl-0 = <&pinctrl_ecspi4_1>;
+    cs-gpios = <&gpio2 15 GPIO_ACTIVE_LOW>;
+    status = "okay";
+    radio@0 {
+        compatible = "silabs,em35x";
+        reg = <0>;
+        spi-max-frequency = <20000000>;
+    };
+};
+
+&iomuxc {
+    pinctrl_adc: adcgrp { fsl,pins = <
+        MX6UL_PAD_GPIO1_IO04__GPIO1_IO04 0x8
+        MX6UL_PAD_GPIO1_IO06__GPIO1_IO06 0x8
+        MX6UL_PAD_GPIO1_IO07__GPIO1_IO07 0x8
+        MX6UL_PAD_ENET1_TX_DATA1__GPIO2_IO04 PAD_CONFIG__GPIO
+        MX6UL_PAD_SD1_DATA3__GPIO2_IO21 PAD_CONFIG__GPIO
+    >; };
+    pinctrl_piezo_enable: piezo-enable-grp { fsl,pins = <
+        MX6UL_PAD_ENET1_TX_CLK__GPIO2_IO06 PAD_CONFIG__GPIO
+    >; };
+    pinctrl_wifi: wifi-grp { fsl,pins = <
+        MX6UL_PAD_SD1_CMD__GPIO2_IO16 PAD_CONFIG__GPIO
+        MX6UL_PAD_SD1_CLK__GPIO2_IO17 PAD_CONFIG__GPIO
+    >; };
+    pinctrl_backplate: backplate-grp { fsl,pins = <
+        MX6UL_PAD_UART1_CTS_B__GPIO1_IO18 PAD_CONFIG__GPIO
+        MX6UL_PAD_CSI_DATA07__GPIO4_IO28 PAD_CONFIG__GPIO
+    >; };
+    pinctrl_thread: thread-grp { fsl,pins = <
+        MX6UL_PAD_SD1_DATA1__GPIO2_IO19 PAD_CONFIG__GPIO
+        MX6UL_PAD_ENET1_RX_EN__GPIO2_IO02 PAD_CONFIG__GPIO
+        MX6UL_PAD_SD1_DATA0__GPIO2_IO18 PAD_CONFIG__GPIO
+    >; };
 };

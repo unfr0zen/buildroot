@@ -1,5 +1,3 @@
-disable nest-backplate.service
-disable nest-wheel.service
 disable avahi-dnsconfd.service
 enable nest-*.service
 enable avahi-daemon.service
